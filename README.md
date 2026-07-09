@@ -54,7 +54,7 @@ isonapse 0.2.0-beta+main.a3f5d2e
 ```
 
 - **`0.2.0-beta`** — the product version. The `-beta` suffix means beta
-  software (see the [terms](https://isonapse.com/terms)); it is dropped
+  software; it is dropped
   when Isonapse graduates from beta.
 - **`main.a3f5d2e`** — the release channel and the build identifier.
 
@@ -84,7 +84,3 @@ The Agent Hook and the forthcoming self-hosted Community Edition are free
 forever, each under its own license. Enterprise Edition is the commercial
 product. The license text ships with the releases on this repository; where
 this README and the LICENSE file differ, the LICENSE file wins.
-
-See also: [terms](https://isonapse.com/terms) ·
-[privacy](https://isonapse.com/privacy) ·
-[roadmap](https://isonapse.com/roadmap)
