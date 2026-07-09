@@ -44,6 +44,24 @@ binaries for macOS (Apple Silicon) and Linux (x86_64), with sha256
 checksums alongside. Intel Macs can run the Apple Silicon binary under
 Rosetta.
 
+### How beta releases are marked
+
+Isonapse is beta software, and every build says so in its version string:
+
+```
+isonapse 0.2.0-beta+main.a3f5d2e
+         └─version─┘ └channel.build┘
+```
+
+- **`0.2.0-beta`** — the product version. The `-beta` suffix means beta
+  software (see the [terms](https://isonapse.com/terms)); it is dropped
+  when Isonapse graduates from beta.
+- **`main.a3f5d2e`** — the release channel and the build identifier.
+
+Release titles on this repository carry the same version. When reporting
+a bug, paste the whole `isonapse --version` output — it identifies the
+exact build.
+
 ## Example policies
 
 Policies are plain Lua — deterministic, reviewable, and yours. The

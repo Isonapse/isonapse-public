@@ -22,7 +22,7 @@ body:
     attributes:
       label: Version
       description: Output of `isonapse --version`
-      placeholder: isonapse 0.1.0+main.abc1234
+      placeholder: isonapse 0.2.0-beta+main.abc1234
     validations:
       required: true
   - type: dropdown
