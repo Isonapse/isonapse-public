@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in the Isonapse beta didn't work as it should.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. One thing before you start: **never paste
+        tokens, API keys, or other secrets** into an issue — redact
+        anything sensitive from output before attaching it.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+      placeholder: I ran … and expected … but got …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `isonapse --version`
+      placeholder: isonapse 0.1.0+main.abc1234
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Channel
+      options:
+        - main (public beta)
+        - beta
+        - alpha
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and architecture
+      placeholder: macOS 15 (Apple Silicon) / Ubuntu 24.04 (x86_64)
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Relevant output
+      description: |
+        Error messages, logs, or diagnostics — **with any secrets
+        redacted**. Wrap in triple backticks.
+      render: shell
+    validations:
+      required: false
