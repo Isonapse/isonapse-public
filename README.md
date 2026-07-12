@@ -37,6 +37,36 @@ or the installer script (which verifies checksums):
 Then follow https://developer.isonapse.com/install — four steps from
 zero to a governed session.
 
+## Releases and versions
+
+Isonapse ships on three channels. The binaries in this archive — and the
+releases on the public repository — are the `main` channel.
+
+| Channel | What it is | Access |
+| --- | --- | --- |
+| `main` | The public beta — what the install commands above give you | anonymous |
+| `beta` | Pre-release ring | private, by invitation |
+| `alpha` | Development ring | private, by invitation |
+
+Each release ships binaries for macOS (Apple Silicon) and Linux (x86_64),
+each with a sha256 checksum alongside. Intel Macs run the Apple Silicon
+binary under Rosetta.
+
+Isonapse is beta software, and every build says so in its version string:
+
+```
+isonapse 0.2.0-beta+main.a3f5d2e
+         └─version─┘ └channel.build┘
+```
+
+- **`0.2.0-beta`** — the product version. The `-beta` suffix marks beta
+  software (see the [terms](https://developer.isonapse.com/terms)); it is
+  dropped when Isonapse graduates from beta.
+- **`main.a3f5d2e`** — the release channel and the build identifier.
+
+When reporting a bug, paste the whole `isonapse --version` output — it
+identifies the exact build.
+
 ## Quick facts
 
 - Everything runs locally: no cloud service, no account, and no telemetry.
