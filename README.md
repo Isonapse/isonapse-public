@@ -5,8 +5,8 @@ enforces them on every action your agent takes — before it runs — and
 records every decision in a tamper-evident, signed audit trail you can
 verify offline.
 
-- Website and docs: https://developers.isonapse.com
-- Install guide: https://developers.isonapse.com/install
+- Website and docs: https://developer.isonapse.com
+- Install guide: https://developer.isonapse.com/install
 - Bug reports: https://github.com/Isonapse/isonapse-public/issues
 - Questions and ideas: https://github.com/Isonapse/isonapse-public/discussions
 - Security reports (please, not in public issues): security@isonapse.com
@@ -34,7 +34,7 @@ or the installer script (which verifies checksums):
 
     curl -fsSL https://github.com/Isonapse/isonapse-public/releases/latest/download/install.sh | sh
 
-Then follow https://developers.isonapse.com/install — four steps from
+Then follow https://developer.isonapse.com/install — four steps from
 zero to a governed session.
 
 ## Quick facts
@@ -61,4 +61,4 @@ in `THIRD_PARTY_DEPENDENCIES.md` and `THIRD_PARTY_NOTICES.md` — included in
 every release archive and printed by `isonapse licenses`.
 
 It's a beta: expect rough edges, keep backups, and tell us what broke —
-https://developers.isonapse.com/feedback
+https://developer.isonapse.com/feedback
