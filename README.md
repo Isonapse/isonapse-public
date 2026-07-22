@@ -1,3 +1,4 @@
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=72bb7394926c5825b6c03d161b88f7251783f8d6 -->
 # Isonapse Agent Hook — release distribution guide
 
 > **Status — Public beta:** The public `main` channel is the primary,
