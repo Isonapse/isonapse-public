@@ -1,5 +1,5 @@
 -- 07-check-action-runtime.lua — per-action runtime decisions via
--- check_action(ctx) (#141).
+-- check_action(ctx).
 --
 -- The earlier rungs decide the policy ONCE, when the file loads
 -- (table-build time). check_action runs PER ACTION, at evaluation time,

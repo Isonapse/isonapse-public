@@ -1,11 +1,11 @@
 -- 06-config-environment.lua — branch on the deployment environment at
--- LOAD time via the mediated `isonapse.config` API (#142).
+-- LOAD time via the mediated `isonapse.config` API.
 --
 -- A single policy file ships to the whole fleet, but the rules differ by
 -- environment: production locks the model list and tightens the budget;
 -- development stays permissive so engineers aren't slowed down. JSON
 -- can't read its surroundings, and the Lua sandbox deliberately nils
--- `os`/`io` (see #36), so a policy CANNOT `os.getenv("ENVIRONMENT")`.
+-- `os`/`io` are unavailable, so a policy CANNOT `os.getenv("ENVIRONMENT")`.
 --
 -- Instead, the operator allowlists keys in `config.toml`:
 --

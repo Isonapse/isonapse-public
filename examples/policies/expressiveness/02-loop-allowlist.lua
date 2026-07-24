@@ -1,6 +1,6 @@
 -- 02-loop-allowlist.lua — table-build loop generates per-subcommand rules.
 --
--- This is the ticket-example from issue #36: PERMIT `tool:Bash:git` ONLY
+-- This example PERMITs `tool:Bash:git` ONLY
 -- when the subcommand is one of {status, log, diff, show, branch, stash}.
 -- Everything else falls through to the gate's default layers (the
 -- destructive veto knocks `git reset --hard` down to "ask the human";

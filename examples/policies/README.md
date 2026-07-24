@@ -3,9 +3,17 @@
 > **Status — Shipped:** These policies exercise the Lua surface available in
 > the Isonapse Agent Hook public beta.
 
-Two tutorial ladders covering the Isonapse Lua policy surface that landed in #36.
+Two tutorial ladders covering the Isonapse Lua policy surface available in the public beta.
 
 Every `.lua` file in this directory is **loadable as-is** by the engine — copy any one to your `policy_path` and restart the controlplane (`isonapse hook stop && isonapse hook start`) to pick it up. Each file is heavily commented; read it as a tutorial, not as terse code.
+
+## Public snapshot
+
+Every `main` release publishes this README and the 14 files listed below to
+`Isonapse/isonapse-public/examples/policies/` as one machine-authored snapshot. The generated
+`.isonapse-source.json` beside them records the full source commit and each Git blob identity, so
+the public policy files remain byte-for-byte equal to this canonical tree. Alpha and beta do not
+mutate that public snapshot; edit examples here, never in the public repository.
 
 ## Ladder A — `fields/` (coverage)
 
@@ -37,13 +45,13 @@ One rung per Lua pattern unavailable in JSON. The point isn't field coverage —
 
 ## What's NOT here
 
-- **CE/EE bundles** — policy format is identical across hook / CE / EE, so the differences live in deployment (Postgres, OIDC, federation, signed policy packs). CE/EE example bundles get authored once #127 (signed policy packs) ships; tracked at #143.
+- **CE/EE bundles** — policy format is identical across hook / CE / EE, so the differences live in
+  deployment (Postgres, OIDC, federation, signed policy packs). Those deployment bundles will be
+  published with the corresponding products.
 
 ## Tests
 
-Every file is exercised by
-`code-ref:crates/isonapse-tests/tests/policy_examples.rs#every_example_file_loads_via_the_engine`.
-Run with:
+Release validation loads every file through the real policy engine. Source contributors can run:
 
 ```
 cargo test -p isonapse-tests --test policy_examples
