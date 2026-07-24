@@ -1,4 +1,4 @@
-<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=72bb7394926c5825b6c03d161b88f7251783f8d6 -->
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=f1e71fa00a463311dc104a7029593e1f1e584077 -->
 # Isonapse Agent Hook — release distribution guide
 
 > **Status — Public beta:** The public `main` channel is the primary,
@@ -14,6 +14,7 @@ outside that receipt guarantee.
 
 - Website and docs: https://developer.isonapse.com
 - Install guide: https://developer.isonapse.com/install
+- Copy-ready Lua policy examples: https://github.com/Isonapse/isonapse-public/tree/main/examples/policies
 - Feedback: https://developer.isonapse.com/feedback
 - Public issue tracker: https://github.com/Isonapse/isonapse-public/issues
 - Discussions: https://github.com/Isonapse/isonapse-public/discussions
@@ -107,6 +108,13 @@ authorized to read `Isonapse/isonapse-releases`: use a fine-grained token with
 
 Replace `YOUR_PRIVATE_BETA_TOKEN` with the token from your invitation.
 Isonapse engineers substitute `isonapse-alpha`.
+
+Every command names one fully qualified formula. Do not run `brew trust` for
+the tap: public main needs neither GitHub credentials nor whole-tap trust, and
+private alpha/beta need only the documented private-release authorization.
+Install one channel at a time. To switch, uninstall the current formula before
+installing the new one; Homebrew's ordinary link collision otherwise leaves the
+existing linked binaries active and can leave the new keg unlinked.
 
 The private script installer verifies the checksummed source-build identity,
 outer archive digest, and complete internal archive manifest. This alternative
