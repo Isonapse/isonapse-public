@@ -3,7 +3,7 @@
   "manifest_version": 1,
   "source_repository": "Isonapse/isonapse",
   "source_ref": "refs/heads/main",
-  "source_sha": "f1e71fa00a463311dc104a7029593e1f1e584077",
+  "source_sha": "b11afc64e1112031b92183829981ba481e4bce73",
   "files": [
     {
       "path": "README.md",
