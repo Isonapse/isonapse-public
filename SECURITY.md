@@ -5,7 +5,7 @@
 Please report security vulnerabilities **privately** — not in public
 issues or discussions.
 
-Email **dev@isonapse.com** with:
+Email **security@isonapse.com** with:
 
 - a description of the issue and where it lives (component, version from
   `isonapse --version`, OS/arch),
