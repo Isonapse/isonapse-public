@@ -1,66 +1,49 @@
-<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=459f9e7dce3d818dd993e423604e52a4b83f1dbb -->
-# Isonapse Agent Hook — release distribution guide
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=9422cc35959485b2dc6f65043fa8068e19c257db -->
+# Isonapse — a local policy and safety layer for AI coding agents
 
 > **Status — Public beta:** The public `main` channel is the primary,
 > token-free distribution. Private `beta` and `alpha` channels remain available
 > to invited testers and Isonapse engineers. Every archive receives its own
 > generated, channel-bound README.
 
-A local safety layer for AI coding agents. You set the rules; Isonapse
-checks covered actions before they run. Controlplane-produced authorizations
-that can advance are recorded in a tamper-evident, signed audit trail you can
-verify offline; narrow hook-local stops and daemon-unreachable host prompts sit
-outside that receipt guarantee.
+**Available today: the Isonapse Agent Hook for Claude Code.** You set the
+rules; Isonapse checks every covered action before it runs — shell, file,
+web, and tool calls — and keeps a signed, tamper-evident record you can
+verify offline. Local-only: no cloud, no account, no telemetry.
 
-- Website and docs: https://developer.isonapse.com
-- Install guide: https://developer.isonapse.com/install
-- Copy-ready Lua policy examples: https://github.com/Isonapse/isonapse-public/tree/main/examples/policies
-- Feedback: https://developer.isonapse.com/feedback
-- Public issue tracker: https://github.com/Isonapse/isonapse-public/issues
-- Discussions: https://github.com/Isonapse/isonapse-public/discussions
-- Security reports (please, not in public issues): security@isonapse.com
+    brew install isonapse/tap/isonapse
 
-## What's in this archive
+First run — `hook init`, `hook start`, `hook status`, and the one-time model
+download it needs — is in [Install — public main](#install--public-main), with
+the exact sizes stated up front.
 
-| File | Purpose |
-| --- | --- |
-| `isonapse` | The CLI — everything is driven from here |
-| `isonapse-hook` | Per-event client that Claude Code invokes |
-| `isonapse-controlplane` | The local decision engine (runs on your machine) |
-| `isonapse-update` | Updater — installs the verified latest or immutable pinned release |
-| `LICENSE.md` | The Isonapse Agent Hook Public Beta EULA that governs this software |
-| `THIRD_PARTY_NOTICES.md` | Notices for the downloaded machine-learning models |
-| `THIRD_PARTY_DEPENDENCIES.md` | License + copyright text for the open-source crates compiled in (also `isonapse licenses`) |
-| `README.md` | Generated guide bound to the archive's exact channel and immutable source identity |
-| `ISONAPSE_ARCHIVE_MANIFEST` | Schema-v1 target, mode, size, and SHA-256 commitment for every file above |
+Work normally while it learns (Profile), review the policy it proposes
+(`isonapse hook suggest --diff`), then enforce it (`isonapse hook apply`).
 
-This is a closed cohort: the script installer validates the manifest and every
-listed member before changing an installed file. A missing, undeclared, linked,
-non-executable, wrong-target, wrong-size, or digest-mismatched member rejects the
-whole archive and leaves the existing installation unchanged.
+Free during the public beta · macOS 11+ (Apple silicon) · Linux x86_64
+(glibc 2.35+) · License: proprietary — free during the public beta
+([EULA](LICENSE.md))
 
-The installed subset, checksummed build identity, and `installer.conf` commit
-as one recoverable cohort under a per-install OS advisory lock shared by the
-updater and installer. The installer preflights a complete sibling directory
-before the first live rename. Any pre-commit failure restores the prior
-directory and config byte-for-byte; after a killed process, the next invocation
-resolves the retained identity-bound journal before auth or network access.
-macOS keeps its lock sentinel alive through an inherited FIFO writer, and Linux
-children inherit the locked descriptor, so a surviving foreground child cannot
-overlap a new installer. The fixed release cohort has nine named installed
-members; unrelated user-owned entries in the enclosing bin directory remain.
+**Where this is going:** the Agent Hook is step one, not the product ceiling.
+Next comes the self-hosted **Community Edition** — your developers' sessions
+and containerised agents on one dashboard under one policy, free under its
+own license, with an open adapter protocol for agents beyond Claude Code and
+per-repository rules that travel with the repo. After that, the **Enterprise
+Edition** scales the same provable record to a whole organisation: SSO,
+fleet-wide budgets, compliance-ready reporting.
+→ [Roadmap](https://developer.isonapse.com/roadmap)
 
-Every release lookup and download in both standalone scripts uses the same
-bounded transport policy: 10 seconds to connect, no attempt over 120 seconds,
-at most three retries, and five redirects. Two 28-second intermediate probes
-reserve a full final attempt, which starts by second 179. One request therefore
-reaches a verdict within 300 seconds without trusting the adjustable system
-clock. Timeouts, refused connections, HTTP 408/429, and transient 5xx responses
-retry; permanent 4xx responses are not retried.
-Ambient curl configuration and URL globbing cannot expand that contract, and
-production transfers are HTTPS-only. Channel/tag errors omit bearer credentials.
-After mandatory recovery of any earlier interrupted install, exhaustion prepares
-or commits no new transaction or live-cohort change.
+[Install guide](https://developer.isonapse.com/install) ·
+[What it does](https://developer.isonapse.com/product) ·
+[Copy-ready Lua policies](https://github.com/Isonapse/isonapse-public/tree/main/examples/policies) ·
+[Feedback](https://developer.isonapse.com/feedback) ·
+[Issues](https://github.com/Isonapse/isonapse-public/issues) ·
+[Discussions](https://github.com/Isonapse/isonapse-public/discussions) ·
+Security: security@isonapse.com (privately, please)
+
+*Scope note: controlplane-produced authorizations that can advance are
+recorded in the signed audit trail; narrow hook-local stops and
+daemon-unreachable host prompts sit outside that receipt guarantee.*
 
 ## Install — public main
 
@@ -85,112 +68,8 @@ Optional local intelligence remains a separate, skippable download:
 
 Every channel supports
 macOS 11 or later on Apple silicon and Linuxbrew x86_64 with glibc 2.35 or
-later. Every channel release snapshots the exact live tap topology, reconstructs
-siblings from canonical channel history, binds their archive digests to the
-separately published release checksums, and audits, clean-installs, and tests
-every formula on both supported native platforms. The exact cohort advances in
-one tap commit only if that source generation is still current. Later private
-releases retain all three formulae.
-
-Then follow https://developer.isonapse.com/install for the complete guided
-walkthrough from installation to a governed session.
-
-## Private alpha and beta channels
-
-The public `main` channel is the default. Invited testers can instead use
-`beta`, and Isonapse engineers can use `alpha`. Private channel access must be
-authorized to read `Isonapse/isonapse-releases`: use a fine-grained token with
-**Contents: Read-only** for that repository, or a classic token with the
-**`repo`** scope.
-
-    export HOMEBREW_GITHUB_API_TOKEN="YOUR_PRIVATE_BETA_TOKEN"
-    brew install isonapse/tap/isonapse-beta
-
-Replace `YOUR_PRIVATE_BETA_TOKEN` with the token from your invitation.
-Isonapse engineers substitute `isonapse-alpha`.
-
-Every command names one fully qualified formula. Do not run `brew trust` for
-the tap: public main needs neither GitHub credentials nor whole-tap trust, and
-private alpha/beta need only the documented private-release authorization.
-Install one channel at a time. To switch, uninstall the current formula before
-installing the new one; Homebrew's ordinary link collision otherwise leaves the
-existing linked binaries active and can leave the new keg unlinked.
-
-The private script installer verifies the checksummed source-build identity,
-outer archive digest, and complete internal archive manifest. This alternative
-requires the GitHub CLI (`gh`) on `$PATH`; use the Homebrew path above if `gh`
-is not installed:
-
-    export GITHUB_TOKEN="YOUR_PRIVATE_BETA_TOKEN"
-    gh release download beta-latest \
-      --repo Isonapse/isonapse-releases \
-      --pattern install.sh \
-      --dir /tmp --clobber
-    CHANNEL=beta GITHUB_TOKEN="$GITHUB_TOKEN" sh /tmp/install.sh
-
-After upgrading an existing install, rerun the same init form you already use
-(`isonapse hook init`, or `isonapse hook init --managed`). This regenerates
-stale plugin or managed-host configuration without resetting your Isonapse
-state. Then start a fresh Claude Code session so the host loads the regenerated
-55-second handlers; a session that was already open can retain its old timeout.
-
-## Releases and versions
-
-Isonapse defines three channels. Public binaries ship on `main`; private
-`alpha` and `beta` rings carry earlier candidates.
-
-Each published archive gets its own generated README rather than a copy of this
-public-main page. That generated guide names the exact channel, immutable tag,
-full source commit, authoritative distribution repository, authentication
-requirement, and channel-matching install/update commands.
-
-| Channel | What it is | Authoritative releases | Access |
-| --- | --- | --- | --- |
-| `main` | Public beta; default channel | `Isonapse/isonapse-public` | anonymous |
-| `beta` | Invited-test ring | `Isonapse/isonapse-releases` | private, by invitation |
-| `alpha` | Development ring | `Isonapse/isonapse-releases` | private, by invitation |
-
-Release CI treats the private repository as required for the current `alpha`
-and `beta` channels: it
-publishes and then fetches back both the immutable and moving releases, checking
-the exact scripts, complete target asset cohort, checksums, source commit, and
-channel. The private copy of `main` is only an advisory rollback archive;
-public `main` installs are sourced from `Isonapse/isonapse-public`.
-
-Each release ships binaries for macOS 11 or later on Apple silicon and Linux
-x86_64 with glibc 2.35 or later. Every archive has a SHA-256 sidecar plus a
-separately checksummed, versioned identity that binds its full source commit,
-channel, product version, target, archive name, and digest. The installer
-rejects any mismatch before replacement and retains that full identity beside
-the binaries. Intel macOS is not supported in Wave 1; there is no Intel
-prebuilt artifact. Windows native is out of beta scope; no Windows build is
-tested or released.
-
-Isonapse is beta software, and every build says so in its version string:
-
-The canonical identity is `0.2.0-beta+<channel>.<short_sha>` everywhere it is
-shown: the CLI, generated Claude Code plugin, GitHub Release title, and
-Homebrew formula all describe the same build.
-
-```
-isonapse 0.2.0-beta+beta.a3f5d2e
-         └─version─┘ └channel.build┘
-```
-
-- **`0.2.0-beta`** — the product version. The `-beta` suffix marks beta
-  software (see the [terms](https://developer.isonapse.com/terms)); it is
-  dropped when Isonapse graduates from beta.
-- **`beta.a3f5d2e`** — the release channel and the build identifier.
-
-The short identifier is for display. Update, immutable pin, installer, and
-Homebrew decisions use the checksummed release identity, so the publication
-repository's `main` branch is never treated as the private source commit. A pin
-gets its installer from the same accepted immutable release and commits only if
-the installer's identity fetch has the exact build-identity digest already approved;
-it never falls through to the moving alias.
-
-When reporting a bug, paste the whole `isonapse --version` output — it
-identifies the exact build.
+later. Then follow https://developer.isonapse.com/install for the complete
+guided walkthrough from installation to a governed session.
 
 ## Quick facts
 
@@ -242,6 +121,159 @@ identifies the exact build.
   process already running as the same account (or root) and deliberately
   targeting lifecycle or private quarantine entries between syscalls; stop that process before
   retrying or resolve the retained state manually.
+
+## Releases and versions
+
+Isonapse defines three channels. Public binaries ship on `main`; private
+`alpha` and `beta` rings carry earlier candidates.
+
+| Channel | What it is | Authoritative releases | Access |
+| --- | --- | --- | --- |
+| `main` | Public beta; default channel | `Isonapse/isonapse-public` | anonymous |
+| `beta` | Invited-test ring | `Isonapse/isonapse-releases` | private, by invitation |
+| `alpha` | Development ring | `Isonapse/isonapse-releases` | private, by invitation |
+
+Isonapse is beta software, and every build says so in its version string.
+The canonical identity is `0.2.0-beta+<channel>.<short_sha>` everywhere it is
+shown: the CLI, generated Claude Code plugin, GitHub Release title, and
+Homebrew formula all describe the same build.
+
+```
+isonapse 0.2.0-beta+beta.a3f5d2e
+         └─version─┘ └channel.build┘
+```
+
+- **`0.2.0-beta`** — the product version. The `-beta` suffix marks beta
+  software (see the [terms](https://developer.isonapse.com/terms)); it is
+  dropped when Isonapse graduates from beta.
+- **`beta.a3f5d2e`** — the release channel and the build identifier.
+
+When reporting a bug, paste the whole `isonapse --version` output — it
+identifies the exact build.
+
+## Private alpha and beta channels
+
+The public `main` channel is the default. Invited testers can instead use
+`beta`, and Isonapse engineers can use `alpha`. Private channel access must be
+authorized to read `Isonapse/isonapse-releases`: use a fine-grained token with
+**Contents: Read-only** for that repository, or a classic token with the
+**`repo`** scope.
+
+    export HOMEBREW_GITHUB_API_TOKEN="YOUR_PRIVATE_BETA_TOKEN"
+    brew install isonapse/tap/isonapse-beta
+
+Replace `YOUR_PRIVATE_BETA_TOKEN` with the token from your invitation.
+Isonapse engineers substitute `isonapse-alpha`.
+
+Every command names one fully qualified formula. Do not run `brew trust` for
+the tap: public main needs neither GitHub credentials nor whole-tap trust, and
+private alpha/beta need only the documented private-release authorization.
+Install one channel at a time. To switch, uninstall the current formula before
+installing the new one; Homebrew's ordinary link collision otherwise leaves the
+existing linked binaries active and can leave the new keg unlinked.
+
+The private script installer verifies the checksummed source-build identity,
+outer archive digest, and complete internal archive manifest. This alternative
+requires the GitHub CLI (`gh`) on `$PATH`; use the Homebrew path above if `gh`
+is not installed:
+
+    export GITHUB_TOKEN="YOUR_PRIVATE_BETA_TOKEN"
+    gh release download beta-latest \
+      --repo Isonapse/isonapse-releases \
+      --pattern install.sh \
+      --dir /tmp --clobber
+    CHANNEL=beta GITHUB_TOKEN="$GITHUB_TOKEN" sh /tmp/install.sh
+
+After upgrading an existing install, rerun the same init form you already use
+(`isonapse hook init`, or `isonapse hook init --managed`). This regenerates
+stale plugin or managed-host configuration without resetting your Isonapse
+state. Then start a fresh Claude Code session so the host loads the regenerated
+55-second handlers; a session that was already open can retain its old timeout.
+
+<details>
+<summary><strong>Distribution and verification internals</strong> — archive
+contents, installer transaction, transport contract, and release binding</summary>
+
+## What's in this archive
+
+| File | Purpose |
+| --- | --- |
+| `isonapse` | The CLI — everything is driven from here |
+| `isonapse-hook` | Per-event client that Claude Code invokes |
+| `isonapse-controlplane` | The local decision engine (runs on your machine) |
+| `isonapse-update` | Updater — installs the verified latest or immutable pinned release |
+| `LICENSE.md` | The Isonapse Agent Hook Public Beta EULA that governs this software |
+| `THIRD_PARTY_NOTICES.md` | Notices for the downloaded machine-learning models |
+| `THIRD_PARTY_DEPENDENCIES.md` | License + copyright text for the open-source crates compiled in (also `isonapse licenses`) |
+| `README.md` | Generated guide bound to the archive's exact channel and immutable source identity |
+| `ISONAPSE_ARCHIVE_MANIFEST` | Schema-v1 target, mode, size, and SHA-256 commitment for every file above |
+
+This is a closed cohort: the script installer validates the manifest and every
+listed member before changing an installed file. A missing, undeclared, linked,
+non-executable, wrong-target, wrong-size, or digest-mismatched member rejects the
+whole archive and leaves the existing installation unchanged.
+
+The installed subset, checksummed build identity, and `installer.conf` commit
+as one recoverable cohort under a per-install OS advisory lock shared by the
+updater and installer. The installer preflights a complete sibling directory
+before the first live rename. Any pre-commit failure restores the prior
+directory and config byte-for-byte; after a killed process, the next invocation
+resolves the retained identity-bound journal before auth or network access.
+macOS keeps its lock sentinel alive through an inherited FIFO writer, and Linux
+children inherit the locked descriptor, so a surviving foreground child cannot
+overlap a new installer. The fixed release cohort has nine named installed
+members; unrelated user-owned entries in the enclosing bin directory remain.
+
+Every release lookup and download in both standalone scripts uses the same
+bounded transport policy: 10 seconds to connect, no attempt over 120 seconds,
+at most three retries, and five redirects. Two 28-second intermediate probes
+reserve a full final attempt, which starts by second 179. One request therefore
+reaches a verdict within 300 seconds without trusting the adjustable system
+clock. Timeouts, refused connections, HTTP 408/429, and transient 5xx responses
+retry; permanent 4xx responses are not retried.
+Ambient curl configuration and URL globbing cannot expand that contract, and
+production transfers are HTTPS-only. Channel/tag errors omit bearer credentials.
+After mandatory recovery of any earlier interrupted install, exhaustion prepares
+or commits no new transaction or live-cohort change.
+
+## Release binding and channel machinery
+
+Each published archive gets its own generated README rather than a copy of this
+public-main page. That generated guide names the exact channel, immutable tag,
+full source commit, authoritative distribution repository, authentication
+requirement, and channel-matching install/update commands.
+
+Release CI treats the private repository as required for the current `alpha`
+and `beta` channels: it
+publishes and then fetches back both the immutable and moving releases, checking
+the exact scripts, complete target asset cohort, checksums, source commit, and
+channel. The private copy of `main` is only an advisory rollback archive;
+public `main` installs are sourced from `Isonapse/isonapse-public`.
+
+Each release ships binaries for macOS 11 or later on Apple silicon and Linux
+x86_64 with glibc 2.35 or later. Every archive has a SHA-256 sidecar plus a
+separately checksummed, versioned identity that binds its full source commit,
+channel, product version, target, archive name, and digest. The installer
+rejects any mismatch before replacement and retains that full identity beside
+the binaries. Intel macOS is not supported in Wave 1; there is no Intel
+prebuilt artifact. Windows native is out of beta scope; no Windows build is
+tested or released.
+
+Every channel release snapshots the exact live tap topology, reconstructs
+siblings from canonical channel history, binds their archive digests to the
+separately published release checksums, and audits, clean-installs, and tests
+every formula on both supported native platforms. The exact cohort advances in
+one tap commit only if that source generation is still current. Later private
+releases retain all three formulae.
+
+The short identifier is for display. Update, immutable pin, installer, and
+Homebrew decisions use the checksummed release identity, so the publication
+repository's `main` branch is never treated as the private source commit. A pin
+gets its installer from the same accepted immutable release and commits only if
+the installer's identity fetch has the exact build-identity digest already approved;
+it never falls through to the moving alias.
+
+</details>
 
 ## License
 
