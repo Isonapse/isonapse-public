@@ -5,7 +5,7 @@
 
 Two tutorial ladders covering the Isonapse Lua policy surface available in the public beta.
 
-Every `.lua` file in this directory is **loadable as-is** by the engine — copy any one to your `policy_path` and restart the controlplane (`isonapse hook stop && isonapse hook start`) to pick it up. Each file is heavily commented; read it as a tutorial, not as terse code.
+Every `.lua` file in this directory is **loadable as-is** by the engine — copy any one to your `policy_path` and restart the controlplane (`isonapse hook restart`) to pick it up. Each file is heavily commented; read it as a tutorial, not as terse code.
 
 ## Public snapshot
 
@@ -17,7 +17,7 @@ mutate that public snapshot; edit examples here, never in the public repository.
 
 ## Ladder A — `fields/` (coverage)
 
-One rung per shipped `PolicyDefinition` field cluster, cumulative complexity. Reading from top to bottom teaches you the full operator-facing surface, including the half no built-in template exercises.
+One rung per shipped policy field cluster, with cumulative complexity. Reading from top to bottom teaches you the full operator-facing surface, including the half no built-in template exercises.
 
 | File | Shows |
 |---|---|
@@ -25,7 +25,7 @@ One rung per shipped `PolicyDefinition` field cluster, cumulative complexity. Re
 | [`02-blocked-capabilities.lua`](fields/02-blocked-capabilities.lua) | `blocked_capabilities` — agent-pattern wildcards, exact denials. The deterministic floor. |
 | [`03-domain-rules.lua`](fields/03-domain-rules.lua) | `allowed_domains` + `blocked_domains` for HTTP egress; blocked beats allowed. |
 | [`04-rate-limits.lua`](fields/04-rate-limits.lua) | Per-capability sliding-window counters (minute / hour / day). |
-| [`05-action-rules.lua`](fields/05-action-rules.lua) | `actions` — PERMIT/DENY, trust zones, PII allowlists, secret allowlists, secret injection. Overrides the destructive veto. |
+| [`05-action-rules.lua`](fields/05-action-rules.lua) | `actions` — PERMIT/DENY/DEFER/LEARNED, trust zones, PII allowlists, secret allowlists, secret injection. PERMIT directly bypasses the destructive veto; LEARNED routes an eligible non-catastrophic action through the quorum. |
 | [`06-file-patterns.lua`](fields/06-file-patterns.lua) | `blocked_file_patterns`, `hidden_file_patterns` (OverlayFS hides), `max_payload_size`. |
 | [`07-llm-and-coherence.lua`](fields/07-llm-and-coherence.lua) | `llm` budget + model allowlist; `coherence` envelopes with `direction` and `hard_cap`. |
 
@@ -36,7 +36,7 @@ One rung per Lua pattern unavailable in JSON. The point isn't field coverage —
 | File | Shows |
 |---|---|
 | [`01-shared-list.lua`](expressiveness/01-shared-list.lua) | One `local PROD_DBS = {...}` shared between `blocked_capabilities`, `blocked_domains`, and `blocked_file_patterns`. Single source of truth. |
-| [`02-loop-allowlist.lua`](expressiveness/02-loop-allowlist.lua) | The ticket example: a for-loop generates per-subcommand action rules from a list. Permits read-only git, lets the rest DEFER. |
+| [`02-loop-allowlist.lua`](expressiveness/02-loop-allowlist.lua) | A loop-generated allowlist: per-subcommand action rules from one list. Permits read-only git, lets the rest DEFER. |
 | [`03-helper-functions.lua`](expressiveness/03-helper-functions.lua) | Local helper functions (`permit`, `deny`, `local_permit`, `rate`) — declarative DSL in ~12 lines. |
 | [`04-data-driven.lua`](expressiveness/04-data-driven.lua) | A single `CAPS` data spec drives both `actions` and `coherence` in lockstep. Adding a capability is a one-row edit. |
 | [`05-base-plus-overrides.lua`](expressiveness/05-base-plus-overrides.lua) | `BASE` + `OVERRIDES` tables, deep-merged at load time. The org-baseline + per-team-override pattern. |
@@ -51,10 +51,5 @@ One rung per Lua pattern unavailable in JSON. The point isn't field coverage —
 
 ## Tests
 
-Release validation loads every file through the real policy engine. Source contributors can run:
-
-```
-cargo test -p isonapse-tests --test policy_examples
-```
-
-A meta-test walks `examples/policies/**/*.lua` and rejects any file that doesn't have a paired assertion, so new examples can't be added without a regression bar.
+Release validation loads every file through the real policy engine and rejects
+examples without paired regression coverage.

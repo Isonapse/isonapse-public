@@ -11,13 +11,19 @@
 --
 -- Glob shapes the matcher understands:
 --
---   - `example.com`           — exact match on the domain
+--   - `example.com`           — exact match on the whole domain
 --   - `*.example.com`         — any subdomain (and `example.com` itself)
---   - Anything else is a literal exact-match.
+--   - `*`                     — every domain
+--   - `*.production.*`, `api.*`, `*internal` — `*` matches any run of
+--     characters; the pattern is anchored at both ends, so `prod` does
+--     NOT match `prod.internal`.
 --
--- A common pattern (security-audit) is to set `["*"]` as the allowlist
--- meaning "no domain is allowed anywhere" then carve exceptions per
--- capability.
+-- To express "only these hosts", write the allowlist alone — a non-empty
+-- `allowed_domains` list already denies everything it does not name.
+-- Do NOT add `blocked_domains = { "*" }` alongside it: blocked beats
+-- allowed, so the catch-all denies the allowlist too and the capability
+-- becomes unusable. (Earlier releases treated a bare `*` as matching
+-- nothing, so that combination looked like it worked.)
 --
 -- Try it:
 --   * tool:WebFetch -> https://api.example.com/x   -> PERMIT (matches allowlist)

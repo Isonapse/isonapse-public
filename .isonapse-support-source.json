@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "manifest_version": 1,
+  "source_repository": "Isonapse/isonapse",
+  "source_ref": "refs/heads/main",
+  "source_sha": "9422cc35959485b2dc6f65043fa8068e19c257db",
+  "files": [
+    {
+      "path": "LICENSE.md",
+      "git_blob_sha": "f726a480398e8fda56c2c765d2d2a7b23959781d"
+    },
+    {
+      "path": "SECURITY.md",
+      "git_blob_sha": "c3af5427622260fd59d230b50897000460fa7123"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug-report.yml",
+      "git_blob_sha": "be492c259593f30db96af1f6c9265e37edf7eda9"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/config.yml",
+      "git_blob_sha": "51508538ada566ade6ea13a860d6352aa2cd2512"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature-request.yml",
+      "git_blob_sha": "73be2399741d94c60c8010e8feaeeba54a8c26f6"
+    }
+  ]
+}

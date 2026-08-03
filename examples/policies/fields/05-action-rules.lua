@@ -1,13 +1,17 @@
--- 05-action-rules.lua — explicit PERMIT/DENY + trust zones + PII/secret
--- allowlists + secret injection.
+-- 05-action-rules.lua — explicit PERMIT/DENY/DEFER/LEARNED + trust zones +
+-- PII/secret allowlists + secret injection.
 --
 -- The `actions` map is the most powerful per-capability surface and the
--- ONE place that can override the destructive veto (an explicit PERMIT
--- for, say, `tool:Bash:git` waves through `git reset --hard` despite the
--- shell registry classifying it as destructive). It carries five
--- sub-fields:
+-- place for explicit operator decisions. An applicable PERMIT for, say,
+-- `tool:Bash:git` directly waves a standalone `git reset --hard` through
+-- despite the destructive classification. LEARNED is the cautious alternative:
+-- it skips that veto but still requires the learned gate's capability/safety
+-- scope and two-of-three quorum. It carries seven sub-fields:
 --
---   decision         — "PERMIT" | "DENY". Required. Mirrors ActionDecision.
+--   decision         — "PERMIT" | "DENY" | "DEFER" | "LEARNED". Required.
+--                      DENY blocks; PERMIT is direct operator trust; DEFER
+--                      always asks; LEARNED explicitly routes to the learned
+--                      gate (and cannot unlock a catastrophic verb).
 --   reason           — free-form text. Surfaces in the denial message and
 --                      the witness chain. Operators read this when
 --                      debugging "why was X blocked?"
@@ -27,6 +31,9 @@
 --                      `{{ secret.NAME }}` placeholders. Empty/absent =
 --                      no secret injection (fail-closed). The secret
 --                      values themselves live in ~/.isonapse/secrets/.
+--   domains          — optional host globs that scope a PERMIT.
+--                      A missing or non-matching host fails closed with DENY;
+--                      a blocked domain still wins.
 --
 -- Trust zones in 30 seconds:
 --   - "local" — Bash, Read, Edit, Write — runs on YOUR host, can see
@@ -34,9 +41,14 @@
 --   - "external" — WebFetch, MCP, any HTTP egress — runs on someone
 --     else's host, MUST NOT see plaintext (PII flows as `[PII_…]`
 --     tokens; secrets aren't injected).
+-- Data grants descend only from a literal program/server key such as
+-- `tool:Bash:psql`, never from a whole-tool or wildcard key. A more-specific
+-- rule replaces rather than accumulates its ancestor's grants.
 --
--- Action rules short-circuit the rest of policy evaluation. DENY here
--- beats every other layer; PERMIT here beats the destructive veto.
+-- Action decisions follow the documented precedence. DENY is terminal;
+-- an applicable PERMIT that survives non-bypassable pattern/command-shape
+-- checks skips the destructive veto and learned gate; DEFER asks; LEARNED
+-- routes to the learned gate and can skip only the destructive veto.
 
 return {
   policy_version = "action-rules-v1",

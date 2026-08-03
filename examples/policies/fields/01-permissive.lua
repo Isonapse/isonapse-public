@@ -15,7 +15,7 @@
 --
 -- Try it:
 --   1. Save this file as ~/.isonapse/policy/policy.lua
---   2. Restart the controlplane: `isonapse hook stop && isonapse hook start`
+--   2. Restart the controlplane: `isonapse hook restart`
 --   3. `isonapse hook policy show --summary` — every count should be 0
 --   4. Any agent action falls through to the gate's default layers.
 

@@ -12,9 +12,8 @@ Email **security@isonapse.com** with:
 - steps to reproduce, and
 - your assessment of the impact.
 
-You will get an acknowledgement within a few days. Please give us
-reasonable time to ship a fix before disclosing publicly — we will credit
-you in the release notes unless you prefer otherwise.
+Please give us reasonable time to investigate and ship a fix before
+disclosing publicly.
 
 ## Scope
 

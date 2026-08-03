@@ -1,6 +1,12 @@
 -- 04-rate-limits.lua — per-capability sliding-window counters.
 --
--- `rate_limits[<cap>]` declares a counter on the (agent, capability) pair.
+-- `rate_limits[<cap>]` declares a counter on the (agent, policy key) pair.
+-- The key governs its whole capability subtree, so `tool:Bash` is ONE
+-- shared budget across every sub-command (`tool:Bash:git`,
+-- `tool:Bash:curl`, …) rather than a separate budget for each. Where a
+-- broad and a narrow key both govern a call, both budgets are charged —
+-- a narrow key tightens the broad one instead of escaping it.
+--
 -- Three independent sliding windows are tracked; you can use any
 -- combination of the three.
 --

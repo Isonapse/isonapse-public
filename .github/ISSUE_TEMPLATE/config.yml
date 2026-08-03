@@ -6,6 +6,6 @@ contact_links:
   - name: Security vulnerabilities
     url: https://github.com/Isonapse/isonapse-public/blob/main/SECURITY.md
     about: Please report vulnerabilities privately — not in public issues.
-  - name: isonapse.com
-    url: https://isonapse.com
+  - name: developer.isonapse.com
+    url: https://developer.isonapse.com
     about: Product overview, install guide, terms, and privacy.
