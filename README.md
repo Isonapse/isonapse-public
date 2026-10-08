@@ -1,4 +1,4 @@
-<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=0167172e9f2a4661847b1224ea9f2156184e5fa4 -->
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=aa8216db92574d24ab8cdcb3141f4a4eda4d2535 -->
 # Isonapse — a local policy and safety layer for AI coding agents
 
 > **Status — Public beta:** The public `main` channel is the primary,
