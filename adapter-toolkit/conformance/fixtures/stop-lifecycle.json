@@ -1,0 +1,17 @@
+{
+  "case": "stop-lifecycle",
+  "description": "The per-turn stop event traverses the adapter independently from terminal session-end and requires no tool input.",
+  "event": "stop",
+  "expectedHookEvent": "stop",
+  "hookRequest": {
+    "session_id": "conformance-stop",
+    "hook_event_name": "Stop"
+  },
+  "hookStdout": { "protocolVersion": 1, "decision": "allow" },
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "executed",
+    "effectLog": "",
+    "modelOutput": ""
+  }
+}

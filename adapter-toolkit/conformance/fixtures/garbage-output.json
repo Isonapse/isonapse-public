@@ -1,0 +1,21 @@
+{
+  "case": "garbage-output",
+  "description": "The hook wrote something that is not a v1 decision (a wedged or truncated write). No decision exists, so the adapter must abort rather than fall back to running the original input.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-garbage",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_garbage",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdoutRaw": "thread 'main' panicked at src/main.rs:1\n{\"protocolVersion\":1,\"decis",
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": ""
+  }
+}

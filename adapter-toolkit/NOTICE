@@ -1,0 +1,11 @@
+Isonapse Host Adapter Toolkit
+Copyright 2026 Isonapse GmbH
+
+The Hermes reference integration targets Hermes Agent by Nous Research.
+The pi reference integration targets the pi coding agent project.
+The Codex reference adapter targets Codex CLI by OpenAI.
+Those names identify compatibility targets only; their owners do not endorse this toolkit.
+
+No third-party source code or runtime dependency is bundled in this toolkit.
+The reference glue imports host APIs supplied by separately installed Hermes
+Agent or pi packages; those packages remain subject to their upstream terms.

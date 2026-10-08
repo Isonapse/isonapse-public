@@ -1,0 +1,17 @@
+{
+  "case": "session-end-lifecycle",
+  "description": "The terminal session-end event traverses the adapter without being mistaken for a tool action or requiring tool input.",
+  "event": "session-end",
+  "expectedHookEvent": "session-end",
+  "hookRequest": {
+    "session_id": "conformance-session-end",
+    "hook_event_name": "SessionEnd"
+  },
+  "hookStdout": { "protocolVersion": 1, "decision": "allow" },
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "executed",
+    "effectLog": "",
+    "modelOutput": ""
+  }
+}

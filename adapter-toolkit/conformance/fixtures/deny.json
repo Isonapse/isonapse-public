@@ -1,0 +1,26 @@
+{
+  "case": "deny",
+  "description": "An ordinary gate DENY. The adapter must not execute the action and must surface the reason to the operator.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-deny",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_deny",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "deny",
+    "reason": "destructive command blocked by policy rule delete_root"
+  },
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "delete_root"
+  }
+}

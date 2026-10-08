@@ -1,0 +1,29 @@
+{
+  "case": "oversized-output",
+  "description": "A syntactically valid ALLOW past the 1 MiB protocol ceiling. The adapter must refuse it rather than act on a payload no honest hook emits — and must bound its read while doing so. padReasonToBytes inflates the reason at run time so the repository carries no megabyte fixture.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-oversized",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_oversized",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "allow",
+    "reason": "padded: ",
+    "effectiveInput": {
+      "command": "printf oversized >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "padReasonToBytes": 1200000,
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": ""
+  }
+}

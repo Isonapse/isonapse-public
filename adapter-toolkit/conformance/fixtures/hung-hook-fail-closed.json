@@ -1,0 +1,29 @@
+{
+  "case": "hung-hook-fail-closed",
+  "description": "A hook that never completes is killed within the adapter deadline. Its eventual ALLOW must never execute.",
+  "event": "PreToolUse",
+  "hookHangSeconds": 1,
+  "hookRequest": {
+    "session_id": "conformance-hung-hook",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_hung",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "allow",
+    "effectiveInput": {
+      "command": "printf late >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "deadline"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "case": "ask-with-native-approval",
+  "description": "A capable host must surface the typed ASK through its native confirmation UI and apply the exact bound input only after affirmative approval. The harness models an affirmative human response.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-ask",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_ask",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "ask",
+    "reason": "policy requires native human confirmation",
+    "effectiveInput": {
+      "command": "printf reviewed >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookExit": 0,
+  "requiresCapability": "can_ask",
+  "expect": {
+    "exitStatus": "executed",
+    "effectLog": "reviewed",
+    "modelOutput": ""
+  },
+  "expectWithoutCapability": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "no approval surface"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "case": "unavailable-fail-closed",
+  "description": "The daemon could not be reached, so no gate decision and no authorization receipt exist. The adapter must abort. The reason deliberately never contains the words 'unavailable' or 'timed out': an adapter that infers availability by scanning prose (the #343/#344 antipattern both draft adapters shipped) fails open here, which is exactly what this fixture is for.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-unavailable",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_unavailable",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "unavailable",
+    "reason": "isonapse control plane: connection refused on the configured socket",
+    "retryable": true
+  },
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "connection refused"
+  }
+}

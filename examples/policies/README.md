@@ -7,6 +7,36 @@ Two tutorial ladders covering the Isonapse Lua policy surface available in the p
 
 Every `.lua` file in this directory is **loadable as-is** by the engine — copy any one to your `policy_path` and restart the controlplane (`isonapse hook restart`) to pick it up. Each file is heavily commented; read it as a tutorial, not as terse code.
 
+For repository-scoped governance, place a reviewed policy at
+`<git-root>/.isonapse/policy.lua` instead of replacing the machine-wide
+`policy_path`. Project DENY/DEFER routes and tighter constraints apply without
+trust and travel with a clone. PERMIT/LEARNED widening activates only after
+`isonapse hook trust <repo>` records that exact file hash; changing any byte
+returns it to restrictive-only mode. See the runnable
+[`../per-repo/`](../per-repo/) walkthrough for the learned-policy publication
+flow.
+
+Compound Bash evidence names the tool boundary (`tool:Bash:%compound`), while static
+policy checks separately analyze its executable subjects. New compound receipts also list
+those subjects in their signed description: `pwd && ls -la` records `ls` and `pwd`, and
+`sh -c 'test -f x && printf ok'` records `printf`, `sh` (the wrapper) and `test`. Only
+shipped program file names are listed, with a known sub-command such as `git:status`; any
+other executable is counted, never named, and directories and arguments are never recorded.
+A subject is a file name, as policy matches it: a script called by path (`./ls`) or found
+through a changed `PATH` is recorded under its file name. `hook witness query` (including
+`--json`), `hook explain` and `hook observations` show the list; receipts signed earlier
+have none. A `sh -c` wrapper keeps its conservative write classification. A receipt does
+not prove that every conditional command ran. A program run by a `trap` handler, or by a
+here-string or heredoc that `source`, `.` or `bash /dev/stdin` reads, is listed like one
+written directly; an alias, a `hash` binding or a script read from a pipe is counted as
+unnamed; the command `sudo` or `ssh` runs, and a script piped into `bash`, are not
+listed. Unresolved executable names are refused outside Profile; quoted data is not treated as executable
+source. Historical signed evidence is unchanged.
+Simple `sleep` and supported read-only `find` searches retain read classification; redirects,
+delete predicates and child execution still receive their stronger checks. Recognized find predicate
+and explicit-path values remain data; child-execution predicates keep compound evidence through `env -S`
+and transparent wrappers.
+
 ## Public snapshot
 
 Every `main` release publishes this README and the 14 files listed below to
@@ -25,7 +55,7 @@ One rung per shipped policy field cluster, with cumulative complexity. Reading f
 | [`02-blocked-capabilities.lua`](fields/02-blocked-capabilities.lua) | `blocked_capabilities` — agent-pattern wildcards, exact denials. The deterministic floor. |
 | [`03-domain-rules.lua`](fields/03-domain-rules.lua) | `allowed_domains` + `blocked_domains` for HTTP egress; blocked beats allowed. |
 | [`04-rate-limits.lua`](fields/04-rate-limits.lua) | Per-capability sliding-window counters (minute / hour / day). |
-| [`05-action-rules.lua`](fields/05-action-rules.lua) | `actions` — PERMIT/DENY/DEFER/LEARNED, trust zones, PII allowlists, secret allowlists, secret injection. PERMIT directly bypasses the destructive veto; LEARNED routes an eligible non-catastrophic action through the quorum. |
+| [`05-action-rules.lua`](fields/05-action-rules.lua) | `actions` — PERMIT/DENY/DEFER/LEARNED, trust zones, PII allowlists, secret allowlists, secret injection. After policy/rate/coherence gating, PERMIT bypasses the later destructive veto; LEARNED routes an eligible non-catastrophic action through the quorum. |
 | [`06-file-patterns.lua`](fields/06-file-patterns.lua) | `blocked_file_patterns`, `hidden_file_patterns` (OverlayFS hides), `max_payload_size`. |
 | [`07-llm-and-coherence.lua`](fields/07-llm-and-coherence.lua) | `llm` budget + model allowlist; `coherence` envelopes with `direction` and `hard_cap`. |
 

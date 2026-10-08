@@ -1,0 +1,27 @@
+{
+  "case": "protocol-version-mismatch",
+  "description": "A well-formed ALLOW in a protocol version this adapter does not speak. A v1 reader cannot know what a later version changed about the meaning of the fields it recognizes, so it must abort rather than act on the ones that happen to look familiar.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-version-mismatch",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_version_mismatch",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 2,
+    "decision": "allow",
+    "effectiveInput": {
+      "command": "printf v2 >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": ""
+  }
+}

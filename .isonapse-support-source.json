@@ -3,7 +3,7 @@
   "manifest_version": 1,
   "source_repository": "Isonapse/isonapse",
   "source_ref": "refs/heads/main",
-  "source_sha": "9422cc35959485b2dc6f65043fa8068e19c257db",
+  "source_sha": "aa8216db92574d24ab8cdcb3141f4a4eda4d2535",
   "files": [
     {
       "path": "LICENSE.md",
@@ -15,7 +15,7 @@
     },
     {
       "path": ".github/ISSUE_TEMPLATE/bug-report.yml",
-      "git_blob_sha": "be492c259593f30db96af1f6c9265e37edf7eda9"
+      "git_blob_sha": "4e8ef6e6af6a95872975271802ff8e8b86a9081b"
     },
     {
       "path": ".github/ISSUE_TEMPLATE/config.yml",
@@ -24,6 +24,258 @@
     {
       "path": ".github/ISSUE_TEMPLATE/feature-request.yml",
       "git_blob_sha": "73be2399741d94c60c8010e8feaeeba54a8c26f6"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/host-adapter.yml",
+      "git_blob_sha": "5cc1f2463001b6dababfe085dc9ee8d607c1fb21"
+    },
+    {
+      "path": "adapter-toolkit/python/pyproject.toml",
+      "git_blob_sha": "973d87a6c0b1d81541df05a084683fc0a32e4d71"
+    },
+    {
+      "path": "adapter-toolkit/python/README.md",
+      "git_blob_sha": "2fc23cf2849f8674a141971cac01feefb261848e"
+    },
+    {
+      "path": "adapter-toolkit/python/LICENSE",
+      "git_blob_sha": "67d67b93514386e0f312525f7afd8424fc32a0fb"
+    },
+    {
+      "path": "adapter-toolkit/python/src/isonapse_hook_adk/__init__.py",
+      "git_blob_sha": "8d0a4b5a6f1d3d2314b37b9539fca27fc3a8877d"
+    },
+    {
+      "path": "adapter-toolkit/python/src/isonapse_hook_adk/__main__.py",
+      "git_blob_sha": "bcc13ebdb75b88023ed1ab2a48563dfdcdabd473"
+    },
+    {
+      "path": "adapter-toolkit/python/src/isonapse_hook_adk/runtime.py",
+      "git_blob_sha": "3d56613da61d8f0ab1f7965d9562f4154bbe158d"
+    },
+    {
+      "path": "adapter-toolkit/python/src/isonapse_hook_adk/strict_json.py",
+      "git_blob_sha": "256a75d73cff0c64625a4f4aa39d19841067fe55"
+    },
+    {
+      "path": "adapter-toolkit/python/src/isonapse_hook_adk/py.typed",
+      "git_blob_sha": "392009b7f78cd4a93c86756d90c4506659dd9555"
+    },
+    {
+      "path": "adapter-toolkit/python/tests/test_adk.py",
+      "git_blob_sha": "dcb37013d66cef18771cf2025ea88a72d10183ca"
+    },
+    {
+      "path": "adapter-toolkit/python/tests/test_runtime.py",
+      "git_blob_sha": "fb97d470f3e00288f6eb1d1ccb619f7c8a0fe5b2"
+    },
+    {
+      "path": "adapter-toolkit/typescript/package.json",
+      "git_blob_sha": "dd95a29bab406fa2714f57c55301c0edfe19dcfa"
+    },
+    {
+      "path": "adapter-toolkit/typescript/README.md",
+      "git_blob_sha": "eed5838221edcc5569d1f73da06fd94480959a71"
+    },
+    {
+      "path": "adapter-toolkit/typescript/LICENSE",
+      "git_blob_sha": "67d67b93514386e0f312525f7afd8424fc32a0fb"
+    },
+    {
+      "path": "adapter-toolkit/typescript/index.js",
+      "git_blob_sha": "c2dd9ec99b1a9845badbd8297157f5f2c73f4435"
+    },
+    {
+      "path": "adapter-toolkit/typescript/index.d.ts",
+      "git_blob_sha": "665597f0ed0e9dabf093a3a83e5ff54b91976ab3"
+    },
+    {
+      "path": "adapter-toolkit/typescript/cli.js",
+      "git_blob_sha": "82592182593c002e9ec96910ae8c07cd8396b2c8"
+    },
+    {
+      "path": "adapter-toolkit/typescript/runtime.js",
+      "git_blob_sha": "d4825e5c64d19b6e33392969bf7c8391b8d0bedb"
+    },
+    {
+      "path": "adapter-toolkit/typescript/runtime.d.ts",
+      "git_blob_sha": "eddd4506fdb1a2bfd5af9c8da960cbb2370ff7c0"
+    },
+    {
+      "path": "adapter-toolkit/typescript/input.js",
+      "git_blob_sha": "32b3c15b43dc6349c06184dff68bac7ba93a66ed"
+    },
+    {
+      "path": "adapter-toolkit/typescript/input.d.ts",
+      "git_blob_sha": "19a4439ab0f7a4b1a3dd98681d2472e8446f1fea"
+    },
+    {
+      "path": "adapter-toolkit/typescript/hook-command.js",
+      "git_blob_sha": "1a2185e0c14e28d3c7b470e79aa0f7a7ac63208f"
+    },
+    {
+      "path": "adapter-toolkit/typescript/hook-command.d.ts",
+      "git_blob_sha": "82be0f4f5f751b437f278f32faf5a6872750bd1a"
+    },
+    {
+      "path": "adapter-toolkit/typescript/tests/adk.test.js",
+      "git_blob_sha": "22ecb9b721c37c4a16c558022303725f99a7696e"
+    },
+    {
+      "path": "adapter-toolkit/typescript/tests/runtime.test.js",
+      "git_blob_sha": "d282c2caeff586e6cf1648cd9df2989275e6c7d9"
+    },
+    {
+      "path": "adapter-toolkit/typescript/tests/hook-command.test.js",
+      "git_blob_sha": "8107c25100065df1c2d55e2620edea3b6c3230e0"
+    },
+    {
+      "path": "adapter-toolkit/python/src/isonapse_hook_adk/hook_command.py",
+      "git_blob_sha": "faef5d10102b33f41f7f815f7078b77b6802cb0d"
+    },
+    {
+      "path": "adapter-toolkit/python/tests/test_hook_command.py",
+      "git_blob_sha": "6d87301fad0e81a3485cfd12e621f79fb7d37209"
+    },
+    {
+      "path": "adapter-toolkit/reference/codex/README.md",
+      "git_blob_sha": "31752f6c3eca2c5f3c74e0a8297055cce2f9ddc3"
+    },
+    {
+      "path": "adapter-toolkit/reference/codex/codex_hook.mjs",
+      "git_blob_sha": "db9f71d7a514ba82a4e7127b7794b2f953062fd3"
+    },
+    {
+      "path": "adapter-toolkit/reference/codex/hooks.json",
+      "git_blob_sha": "68620fd3f56ddfc2667e767b9678b958e06a1364"
+    },
+    {
+      "path": "adapter-toolkit/reference/codex/supported-versions.json",
+      "git_blob_sha": "3c9b366446ef24e636636f9e2b6811c548463968"
+    },
+    {
+      "path": "adapter-toolkit/LICENSE",
+      "git_blob_sha": "67d67b93514386e0f312525f7afd8424fc32a0fb"
+    },
+    {
+      "path": "adapter-toolkit/NOTICE",
+      "git_blob_sha": "720db018ef6eb86e25bb64e589dd2b2671f840be"
+    },
+    {
+      "path": "adapter-toolkit/README.md",
+      "git_blob_sha": "933307a7d6c3eb580dbc84c063ed76bfe361f09a"
+    },
+    {
+      "path": "adapter-toolkit/PROTOCOL.md",
+      "git_blob_sha": "41aebf3563a94f40e74b5944ffb2673343674428"
+    },
+    {
+      "path": "adapter-toolkit/HOST-PROFILES.md",
+      "git_blob_sha": "8463e3c4d7ef0c420f5d0e14ded67864714ea929"
+    },
+    {
+      "path": "adapter-toolkit/INTEGRATION.md",
+      "git_blob_sha": "353bf0e120ccf595fc00e9a876643202be9d96ca"
+    },
+    {
+      "path": "adapter-toolkit/conformance/run.py",
+      "git_blob_sha": "ac9c7104f21dd93b2dbe3f02ac166942d7425c30"
+    },
+    {
+      "path": "adapter-toolkit/conformance/packages.py",
+      "git_blob_sha": "9fc75f0b7f4ee5b5fb45ef403f77173aa767f048"
+    },
+    {
+      "path": "adapter-toolkit/template/README.md",
+      "git_blob_sha": "506df42f8bf2fe3f13f153f1e22cc8bff4663c6e"
+    },
+    {
+      "path": "adapter-toolkit/template/adapter.py",
+      "git_blob_sha": "d342cd6ab4b6a09822132ea5b01a3e6b35701d43"
+    },
+    {
+      "path": "adapter-toolkit/reference/hermes/isonapse/__init__.py",
+      "git_blob_sha": "3adb10111a9d87196a7d55724f6376d2361e79c6"
+    },
+    {
+      "path": "adapter-toolkit/reference/hermes/isonapse/_adk_json.py",
+      "git_blob_sha": "256a75d73cff0c64625a4f4aa39d19841067fe55"
+    },
+    {
+      "path": "adapter-toolkit/reference/hermes/isonapse/plugin.yaml",
+      "git_blob_sha": "37db63b742c951d4b8f856ebafa29c2381df311d"
+    },
+    {
+      "path": "adapter-toolkit/reference/pi/README.md",
+      "git_blob_sha": "e21d14bd13239dbcf5154842de9fde51a82f7fd2"
+    },
+    {
+      "path": "adapter-toolkit/reference/pi/isonapse.ts",
+      "git_blob_sha": "e069b620b00da23e969c135b0050e89f764e2d59"
+    },
+    {
+      "path": "adapter-toolkit/reference/hermes/README.md",
+      "git_blob_sha": "2e610bc03153007af7738a198ee194f94f24db12"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/ask-with-native-approval.json",
+      "git_blob_sha": "eda11d1e8b61fb72aa4c7c053ee9e565b005fad7"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/defer-on-incapable-host.json",
+      "git_blob_sha": "2ef893a4f5546856ff9ed9bb56e1c9898cc7d52a"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/deny-with-output-replacement.json",
+      "git_blob_sha": "57afb5efc44a184ba4ec05dd66fade1bba4605a6"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/deny.json",
+      "git_blob_sha": "5a899d975979bafe28303029e36a2be9475f6c54"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/garbage-output.json",
+      "git_blob_sha": "1a60d02b71dccadcee33c5cb98148aad9953de1c"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/hook-crash-fail-closed.json",
+      "git_blob_sha": "3a000e8691b70db6e1fa85f7eb857b66af4bdb08"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/hung-hook-fail-closed.json",
+      "git_blob_sha": "f952cbac3ca4741590978b86acb3095b10d80a83"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/key-removal-rewrite.json",
+      "git_blob_sha": "f785a7f25843a499270127a4d647bf2ae4ddde5f"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/output-rewrite.json",
+      "git_blob_sha": "e7bf8f0d0c851af10be7a557cc0f24de90500263"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/oversized-output.json",
+      "git_blob_sha": "e679f48449bd48c896b8efe9fad40f048042dcf0"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/permit-with-rewrite.json",
+      "git_blob_sha": "dcccc2f13f4c2d55f3405db59b071e47390c2c68"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/protocol-version-mismatch.json",
+      "git_blob_sha": "7489d6eb046ace96efdebcbfe49a719e320b788c"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/session-end-lifecycle.json",
+      "git_blob_sha": "7bf902fc475624c3bde502a999cd7a227dca0d94"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/stop-lifecycle.json",
+      "git_blob_sha": "1dfcf802dd193d3befad8d9808b53d1dff451f54"
+    },
+    {
+      "path": "adapter-toolkit/conformance/fixtures/unavailable-fail-closed.json",
+      "git_blob_sha": "3d79297a8af0a73a1874ae7e3d34c6333f29669d"
     }
   ]
 }

@@ -1,0 +1,46 @@
+name: Host adapter or profile
+description: Propose a Host Adapter Protocol integration or report a toolkit problem.
+title: "[adapter] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Never paste tokens, API keys, secrets, private prompts, or unredacted
+        receipts. Report security vulnerabilities privately using SECURITY.md.
+  - type: input
+    id: host
+    attributes:
+      label: Host and version
+      description: Name the upstream agent runtime and tested version range.
+    validations:
+      required: true
+  - type: textarea
+    id: seam
+    attributes:
+      label: Native enforcement seam
+      description: Describe session/tool-call identity, events, and exact input/output replacement APIs. For a hook-command host (a fresh process per event), describe the stdin/stdout/exit contract and what the host does when a hook crashes, times out or is missing.
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Proven capabilities and gaps
+      description: State evidence for input rewrite, output rewrite, native ask, lifecycle, and nested-agent boundaries.
+    validations:
+      required: true
+  - type: textarea
+    id: conformance
+    attributes:
+      label: Conformance result
+      description: Paste the redacted PASS/FAIL summary from adapter-toolkit/conformance/run.py.
+    validations:
+      required: true
+  - type: input
+    id: implementation
+    attributes:
+      label: Public implementation
+      description: Link an Apache-2.0-compatible adapter implementation when proposing a profile.
+    validations:
+      required: false

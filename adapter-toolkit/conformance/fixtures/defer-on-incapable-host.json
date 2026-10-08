@@ -1,0 +1,26 @@
+{
+  "case": "defer-on-incapable-host",
+  "description": "The #347 A2 witnessed DENY: the gate would have DEFERred, but the declared host profile says can_ask=false, so the daemon denied and signed an authorization receipt naming the incapacity. The adapter must treat it as the DENY it is — an adapter that reads 'deferred'/'human' in the prose and improvises an approval reacquires an ask surface its profile says it does not have.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-defer-incapable",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_defer_incapable",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "deny",
+    "reason": "host synthetic declared can_ask=false; it cannot surface a deferred decision to a human, so the action is denied instead"
+  },
+  "hookExit": 0,
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "can_ask=false"
+  }
+}

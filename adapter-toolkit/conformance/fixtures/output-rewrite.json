@@ -1,0 +1,33 @@
+{
+  "case": "output-rewrite",
+  "description": "PostToolUse tokenisation. The adapter must show the model the authorized updatedOutput, not the raw tool_response it already has in hand — otherwise the output leg of the perimeter does not exist on this host.",
+  "event": "PostToolUse",
+  "hookRequest": {
+    "session_id": "conformance-output-rewrite",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_output_rewrite",
+    "tool_input": {
+      "command": "cat /etc/service.env"
+    },
+    "tool_response": "AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMIfixture"
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "allow",
+    "updatedOutput": "AWS_SECRET_ACCESS_KEY=[isonapse:tok_conformance]"
+  },
+  "hookExit": 0,
+  "requiresCapability": "can_rewrite_output",
+  "expect": {
+    "exitStatus": "executed",
+    "effectLog": "",
+    "modelOutput": "AWS_SECRET_ACCESS_KEY=[isonapse:tok_conformance]"
+  },
+  "expectWithoutCapability": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "cannot replace a tool result"
+  }
+}

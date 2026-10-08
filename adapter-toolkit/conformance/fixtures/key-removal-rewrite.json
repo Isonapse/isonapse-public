@@ -1,0 +1,33 @@
+{
+  "case": "key-removal-rewrite",
+  "description": "A PERMIT whose rewrite removed the executable key. effectiveInput is a replacement, not a patch: a host that merges it over the original keeps the removed command and runs bytes the daemon never authorized; a compliant host applies the removal and, with nothing runnable left, aborts.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-key-removal-rewrite",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_key_removal",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "allow",
+    "effectiveInput": {}
+  },
+  "hookExit": 0,
+  "requiresCapability": "can_rewrite_input",
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "no command"
+  },
+  "expectWithoutCapability": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "cannot apply a rewritten tool input"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "case": "hook-crash-fail-closed",
+  "description": "The hook printed a well-formed ALLOW and then exited non-zero. A process that did not complete successfully did not produce a decision the host may act on, so the adapter must abort — a parse-only adapter would execute here.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-hook-crash",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_hook_crash",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "allow",
+    "effectiveInput": {
+      "command": "printf crashed >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookExit": 101,
+  "expect": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": ""
+  }
+}

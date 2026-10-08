@@ -1,0 +1,34 @@
+{
+  "case": "permit-with-rewrite",
+  "description": "A PERMIT whose bound effect rewrote the input. The adapter must execute the authorized effectiveInput, never the original — witnessed-effect must equal executed-effect.",
+  "event": "PreToolUse",
+  "hookRequest": {
+    "session_id": "conformance-permit-with-rewrite",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_permit_rewrite",
+    "tool_input": {
+      "command": "printf original >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "allow",
+    "effectiveInput": {
+      "command": "printf effective >>\"$ISONAPSE_ADAPTER_EFFECT_LOG\""
+    }
+  },
+  "hookExit": 0,
+  "requiresCapability": "can_rewrite_input",
+  "expect": {
+    "exitStatus": "executed",
+    "effectLog": "effective",
+    "modelOutput": ""
+  },
+  "expectWithoutCapability": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "cannot apply a rewritten tool input"
+  }
+}

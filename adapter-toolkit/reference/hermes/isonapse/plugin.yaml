@@ -1,0 +1,10 @@
+name: isonapse
+version: 0.1.0
+description: "Gates audited Hermes pre-tool calls, witnesses session lifecycle, and observes result callbacks opportunistically through Isonapse."
+author: "Isonapse"
+hooks:
+  - pre_tool_call
+  - transform_tool_result
+  - on_session_start
+  - on_session_end
+  - on_session_finalize

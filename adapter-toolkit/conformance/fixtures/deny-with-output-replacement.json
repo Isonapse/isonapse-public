@@ -1,0 +1,32 @@
+{
+  "case": "deny-with-output-replacement",
+  "description": "A post-action DENY cannot undo execution. Its exact updatedOutput is the safe model-visible replacement and must not be discarded in favor of a generic block message.",
+  "event": "PostToolUse",
+  "hookRequest": {
+    "session_id": "conformance-deny-output",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_use_id": "toolu_conformance_deny_output",
+    "tool_input": { "command": "cat /etc/service.env" },
+    "tool_response": "AWS_SECRET_ACCESS_KEY=original-secret"
+  },
+  "hookStdout": {
+    "protocolVersion": 1,
+    "decision": "deny",
+    "reason": "unsafe result blocked after execution",
+    "updatedOutput": "Isonapse withheld the unsafe result."
+  },
+  "hookExit": 0,
+  "requiresCapability": "can_rewrite_output",
+  "expect": {
+    "exitStatus": "executed",
+    "effectLog": "",
+    "modelOutput": "Isonapse withheld the unsafe result."
+  },
+  "expectWithoutCapability": {
+    "exitStatus": "refused",
+    "effectLog": "",
+    "modelOutput": "",
+    "stderrContains": "cannot replace a tool result"
+  }
+}

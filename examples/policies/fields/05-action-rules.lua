@@ -3,10 +3,11 @@
 --
 -- The `actions` map is the most powerful per-capability surface and the
 -- place for explicit operator decisions. An applicable PERMIT for, say,
--- `tool:Bash:git` directly waves a standalone `git reset --hard` through
--- despite the destructive classification. LEARNED is the cautious alternative:
--- it skips that veto but still requires the learned gate's capability/safety
--- scope and two-of-three quorum. It carries seven sub-fields:
+-- `tool:Bash:git` waives the later destructive veto and learned lookup for a
+-- standalone `git reset --hard`, but only after the policy, rate, structural,
+-- shift, and evidence gate permits it. LEARNED is the cautious alternative: it
+-- skips that veto but still requires the learned gate's capability/safety scope
+-- and two-of-three quorum. It carries seven sub-fields:
 --
 --   decision         — "PERMIT" | "DENY" | "DEFER" | "LEARNED". Required.
 --                      DENY blocks; PERMIT is direct operator trust; DEFER
@@ -46,17 +47,18 @@
 -- rule replaces rather than accumulates its ancestor's grants.
 --
 -- Action decisions follow the documented precedence. DENY is terminal;
--- an applicable PERMIT that survives non-bypassable pattern/command-shape
--- checks skips the destructive veto and learned gate; DEFER asks; LEARNED
--- routes to the learned gate and can skip only the destructive veto.
+-- an applicable PERMIT that survives the policy, rate, and coherence filters
+-- plus non-bypassable pattern/command-shape checks skips the later destructive
+-- veto and learned gate; DEFER asks; LEARNED routes to the learned gate and can
+-- skip only the destructive veto.
 
 return {
   policy_version = "action-rules-v1",
 
   actions = {
-    -- Explicit PERMIT that overrides the destructive veto. Operators
-    -- declare this when they intentionally want `git reset --hard` and
-    -- friends to flow without the "ask the human" gate.
+    -- Explicit PERMIT that overrides the post-gate destructive veto. Operators
+    -- declare this when they intentionally want `git reset --hard` and friends
+    -- to flow once the earlier policy/rate/coherence gate is satisfied.
     ["tool:Bash:git"] = {
       decision = "PERMIT",
       reason = "operator-trusted git workflows",
