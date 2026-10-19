@@ -3,7 +3,7 @@
   "manifest_version": 1,
   "source_repository": "Isonapse/isonapse",
   "source_ref": "refs/heads/main",
-  "source_sha": "aa8216db92574d24ab8cdcb3141f4a4eda4d2535",
+  "source_sha": "bce610938cb9d55d69beae1fc1808237ef19c187",
   "files": [
     {
       "path": "LICENSE.md",
@@ -139,7 +139,7 @@
     },
     {
       "path": "adapter-toolkit/reference/codex/README.md",
-      "git_blob_sha": "31752f6c3eca2c5f3c74e0a8297055cce2f9ddc3"
+      "git_blob_sha": "5bd5be546bc408017a1dd5b99335792abc2301b7"
     },
     {
       "path": "adapter-toolkit/reference/codex/codex_hook.mjs",
@@ -171,11 +171,11 @@
     },
     {
       "path": "adapter-toolkit/HOST-PROFILES.md",
-      "git_blob_sha": "8463e3c4d7ef0c420f5d0e14ded67864714ea929"
+      "git_blob_sha": "b446b69e5c65730f45208437c2701fd29a5efa0d"
     },
     {
       "path": "adapter-toolkit/INTEGRATION.md",
-      "git_blob_sha": "353bf0e120ccf595fc00e9a876643202be9d96ca"
+      "git_blob_sha": "07e96a3960496b2a887799d580a2c3ab60642b75"
     },
     {
       "path": "adapter-toolkit/conformance/run.py",

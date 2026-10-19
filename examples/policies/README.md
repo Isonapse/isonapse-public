@@ -12,9 +12,9 @@ For repository-scoped governance, place a reviewed policy at
 `policy_path`. Project DENY/DEFER routes and tighter constraints apply without
 trust and travel with a clone. PERMIT/LEARNED widening activates only after
 `isonapse hook trust <repo>` records that exact file hash; changing any byte
-returns it to restrictive-only mode. See the runnable
-[`../per-repo/`](../per-repo/) walkthrough for the learned-policy publication
-flow.
+returns it to restrictive-only mode. The publication flow is in the top-level
+README under "Keep project rules with the repository" and on the
+[install guide](https://developer.isonapse.com/install).
 
 Compound Bash evidence names the tool boundary (`tool:Bash:%compound`), while static
 policy checks separately analyze its executable subjects. New compound receipts also list

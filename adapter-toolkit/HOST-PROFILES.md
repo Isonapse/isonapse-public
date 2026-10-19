@@ -183,6 +183,24 @@ profile; restart to deactivate the current snapshot. Missing/pruned approvals,
 changed pins, duplicate names and overlapping issuers refuse activation. Keep
 the approval history or reapprove explicitly after retention removes it.
 
+`isonapse hook status` compares each registered host's last receipted tool
+decision with its registration, the installed Hook, the ADK pin file and the
+hook definitions it can see, and warns when one changed with no tool decision
+from that host since; see `INTEGRATION.md`. `host-profile evidence <name>
+--definition <path> --activity <path>` declares further files to compare
+(`--clear` removes them). Like registration it asks for OS authentication and
+needs a running control plane, which writes the owner-only declaration under
+the data directory. Self-protection refuses an agent's change through that
+command, run directly, through a wrapper or as a shell's script argument, but
+not one piped into a shell, which still asks for OS authentication. A process
+running as you can also replace the declaration file itself: a symbolic
+link, or anything other than a regular file, in its place shows as a warning
+with `--clear` as the fix. A declaration with more than one hard link (`ln -f`,
+or a backup tool that hard-links files) shows as a warning that still checks
+its paths; remove the extra link or declare the profile again. A rewrite by a
+script interpreter is not detected. The
+declaration grants nothing and changes no decision.
+
 Executable-only profiles trust all code that executable can run. A script pin
 does not attest imported modules, plugins or already loaded code. The operator
 must control and review the whole runtime installation. File pins and process

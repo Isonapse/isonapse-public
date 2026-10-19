@@ -141,6 +141,34 @@ With an inline pin:
    editing. This is the ungoverned window that a pin file removes.
 3. Confirm as above.
 
+`isonapse hook status` (and `isonapse hook report --host <id>`) warns when a
+registered host's registration, the installed Hook, the pin file or a hook
+definition it can see changed 10 minutes or more ago, within the last 7 days,
+and no tool decision from that host has been receipted since. A declared
+activity file warns once it changed 10 minutes or more after the last tool
+decision, even while it keeps changing. Only a tool decision (an
+authorization receipt) clears it; a session start does not, and a session
+start that no tool decision followed counts as a change, whatever came after
+it. It names the likely fix: re-trust the definition, put the new host ID in
+the hook entries, or run `isonapse hook adk-pin`. For a Codex profile it reads
+the Codex `hooks.json` itself (`$CODEX_HOME` as the shell that runs the check
+sees it); one Codex cannot read counts too, and so does a missing one, timed
+by its directory (with the directory gone too, it is only a note once a tool
+decision is in the window); a symbolic link counts by its own times as well
+as its target's. Declare other
+definition or activity files with
+`isonapse hook host-profile evidence <name> --definition <path> --activity <path>`,
+which asks for OS authentication like registration. Self-protection refuses an
+agent's change through that command, run directly, through a wrapper or as a
+shell's script argument, but not one piped into a shell. Any process running
+as you can also change the declaration file itself: a replacement by a link,
+or by something other than a regular file, shows as a warning (so does a
+hard-link backup of it, which looks the same as `ln -f`), but a rewrite by a
+script interpreter does not. This is a heuristic for a fail-open host,
+not a guarantee: a host that runs no hooks leaves no other trace, and any
+local process that runs the registered adapter with the host ID makes a tool
+decision that clears the warning, so confirm receipts after every change.
+
 Moving an existing setup from an inline pin to a pin file edits the hook
 definition once, so it opens that window once. Run `isonapse hook adk-pin`,
 close the host, replace `--hook-sha256 '<pin>'` with

@@ -232,8 +232,21 @@ cmp -s ~/isonapse-codex/codex_hook.mjs ~/isonapse-codex/isonapse-adapter-toolkit
 **Editing the definition opens an ungoverned window.** Codex skips an edited
 definition silently, so between the edit and the re-trust every tool runs with
 no Isonapse decision and no receipt. This was observed on codex-cli 0.155.1
-and is not a maintained test. Isonapse does not warn you when this happens;
-the only sign is that `hook report` shows no new receipts. Changing the Node
+and is not a maintained test. When `hooks.json` changed 10 minutes or more
+ago and no tool decision from the host has been receipted since,
+`isonapse hook status` and `isonapse hook report --host …` print a warning
+that names the re-trust; a session start alone does not clear it, because
+Codex appears to review each hook entry on its own (inferred, not a
+maintained test). For a profile named `codex…` or registered with
+`codex_hook.mjs`, the check reads `$CODEX_HOME/hooks.json`, or
+`~/.codex/hooks.json` when `CODEX_HOME` is unset, as the shell that runs
+`isonapse hook status` sees them: run it with the same `CODEX_HOME` as Codex.
+A `hooks.json` whose entries no longer name the host ID still counts, and is
+named as such; so do a missing one (timed by its directory; with the
+directory gone too, only a note once a tool decision is in the window) and
+one Codex cannot read, and a symbolic link counts by its own times as well as
+its target's. It is a heuristic, not
+a guarantee: confirm new receipts yourself. Changing the Node
 interpreter likewise needs `host-profile register --replace`, a restart, the
 new host id in all four entries and a re-trust.
 
@@ -323,6 +336,56 @@ witnessed DENY for this host.
 an operator warning (`failed to bind session identity`) and writes no receipt;
 the live session keeps working with its original identity.
 
+**A session identity lasts 8 hours.** The identity the first SessionStart
+establishes expires 8 hours later. While Isonapse keeps running the expiry is
+final for a hook-command host: resuming the same thread keeps the expired
+identity. From then on every tool call in that thread is refused before
+policy runs, in every gate mode including Profile, with
+`Reason [session-identity-expired]` and no receipt. Start a new thread; it
+gets a fresh identity. A restart of the Isonapse control plane followed by
+the thread's next SessionStart does give the same thread a new identity; that
+is how the current design behaves, not a supported recovery.
+
+## The ChatGPT desktop app
+
+The ChatGPT desktop app's Codex workspace reads the same `~/.codex/hooks.json`
+and `~/.codex/config.toml` as Codex CLI, so once these hooks are installed and
+trusted, they also run for tool calls made in the app. This is **unproven and
+unsupported**: the app bundles its own Codex build, which is not in
+`supported-versions.json`, and no maintained test drives the app. A tester
+using the app saw local tool calls (a web retrieval and an attachment read)
+blocked with `ISONAPSE ASK` and `Reason [preparation-refused]`, with no
+receipt. Use Codex CLI at a listed version. Removing the four entries from
+`~/.codex/hooks.json` also removes governance from Codex CLI, because both read
+the same file.
+
+## When tool calls are refused with `preparation-refused`
+
+`preparation-refused` and `session-identity-expired` are identity and session
+checks that run before policy. Profile mode does not prevent them, and no
+receipt is written. Start with `isonapse hook doctor`: it counts recent
+refusals by class, lists each registered host profile with whether its
+interpreter and adapter still match the registration, and checks
+`~/.codex/hooks.json` for host ids no profile has and for Claude-style
+entries, which leave Codex ungoverned (see the last rows of the table). The
+control plane log records each identity refusal made before
+policy with its method, host id (`<unrecognized>` when the id is neither a
+known host nor shaped like a registered id) and fixed reason
+(`Hook call refused before policy: …`). An expired identity is logged as
+`Hook call refused: the session's witnessed root SessionStart identity
+expired; …` with its host id, and a refused SessionStart as
+`Hook SessionStart refused; no new identity was bound: …`. A routine repeated
+SessionStart (a resume, clear or compact) keeps the session's live identity
+and is logged only at info level.
+
+| What you see | Cause | Fix |
+| --- | --- | --- |
+| Every call refused with `preparation-refused` saying the control plane did not recognize this caller as a governed host, after you changed the adapter, the interpreter or the toolkit | Identity drift: the registration pins the old interpreter or adapter bytes, and the host id changed with them. `hook doctor` reports that the profile's files do not match its registration, or a `hooks.json` host id that no profile has | `isonapse hook host-profile register --replace codex-profile.json`, `isonapse hook restart`, copy the new id from `isonapse hook host-profile list` into `--host` in all four entries, then re-trust them in `/hooks` before any prompt |
+| The same refusal while `hook doctor` reports that the files match their registration | The files were reinstalled since the control plane started (it checks the file generation it activated), or the entries' `--hook` path is not the configured `hook_binary_path` | Run `isonapse hook restart`; check `--hook` against `hook_binary_path` in `~/.isonapse/config.toml` |
+| Every call refused with `session-identity-expired` after a long thread | The session's identity lasts 8 hours, and resuming the thread while Isonapse keeps running does not renew it | Start a new thread |
+| Tool calls run with no Isonapse decision and no receipt, and `hook doctor` warns about entries that run the Hook directly | Claude-style entries (the Hook called without the adapter) copied into `~/.codex/hooks.json`. The Hook answers them with `ask`, which Codex runs, so those calls are not refused: they run without Isonapse (a fail-open state) | Replace them with the four entries from the toolkit's `reference/codex/hooks.json` and re-trust them |
+| Refusals only in the ChatGPT desktop app | The app runs the same hooks but is unproven and unsupported | Use Codex CLI at a listed version |
+
 ## Tool mapping
 
 - `Bash` (`exec_command`, unified exec) arrives as `{"command": …}` and is
@@ -374,7 +437,8 @@ the live session keeps working with its original identity.
   without persisted hook trust and without the bypass flag every scripted
   command runs and the daemon writes no receipt; with `--ignore-user-config`
   the definitions still load and the run is governed.
-- **Not proven:** the real Codex binary on Linux; hosted models; subagents;
+- **Not proven:** the ChatGPT desktop app's Codex workspace, which runs the
+  same `~/.codex` hooks; the real Codex binary on Linux; hosted models; subagents;
   receipts across an upgrade and re-pin with the real Codex binary; the
   un-trust of an edited definition and the kept trust of a changed pin file
   (both observed on 0.155.1); Codex versions not listed in
