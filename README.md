@@ -1,4 +1,4 @@
-<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=bce610938cb9d55d69beae1fc1808237ef19c187 -->
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=c47ca90cd12f5d94635cebcbd71634a5e699ad72 -->
 # Isonapse — a local policy and safety layer for coding agents
 
 > **Status — Public beta:** free during the beta ·
@@ -17,7 +17,7 @@ ask you, rewrite the call, or block it. Every allow and every question it
 issues is signed into a tamper-evident record you can verify offline with
 the public key. In Profile mode it watches your normal work and proposes a
 policy; you review the diff and switch to Enforce. Everything runs on your
-machine: no cloud, no account, no telemetry.
+machine: no cloud, no Isonapse account, no telemetry.
 
 **Who it is for.** Engineers who run Claude Code, Hermes Agent, pi or Codex
 CLI on real repositories, and teams that want project rules to travel with
@@ -38,31 +38,49 @@ Security: security@isonapse.com, privately (see [SECURITY.md](SECURITY.md))
     isonapse hook start
     isonapse hook status
 
-The public channel needs no GitHub token. Builds exist only for Apple silicon
+The install needs no GitHub token. Builds exist only for Apple silicon
 Macs and x86_64 Linux: Intel macOS is not supported, and Windows native is out of beta scope.
+
+With Docker running, the easy install sets up the Hook, the self-hosted
+Community Edition server and dashboard, and Claude Code and Codex in one step.
+Instead of the three `hook` commands, run setup once in your own terminal, in
+a plain terminal window that runs no agent (on macOS, Terminal or Ghostty):
+
+    brew install isonapse/tap/isonapse
+    isonapse setup
+
+Setup pairs your browser with a code you type in the terminal; you finish in
+the dashboard, and every change you make there is a plan you approve once in
+your terminal. The [easy install guide](https://developer.isonapse.com/install#easy-install)
+covers each step and the limits to read first.
 
 ## Supported hosts
 
-The Hook works with Claude Code, Hermes Agent v0.20.0, and pi 1.0.3 and 1.0.4.
-OpenAI Codex CLI and your own agent connect through the Hook ADK.
+The Hook works with Claude Code, Hermes Agent v0.20.0, and pi 1.0.3, 1.0.4 and 1.5.0.
+OpenAI Codex CLI and your own agent connect through the Hook ADK; with
+Docker, `isonapse setup` or the dashboard adds Codex for you.
 
 | Host | Version | Connects through | Block | Ask you | Rewrite input | Replace output |
 | --- | --- | --- | --- | --- | --- | --- |
-| Claude Code | No pinned version; Isonapse does not check it | Built in, twelve hook events | Yes | Yes | Yes | Yes, within documented limits |
+| Claude Code | No pinned version; Isonapse does not check it | Built in, thirteen hook events | Yes | Yes | Yes | Yes, within documented limits |
 | Hermes Agent | Exactly v0.20.0 (2026.8.3); setup refuses other builds | Built in, plugin | Yes | No: a question becomes a refusal, recorded when witness storage is available | No: a call that needs a rewrite is refused | No |
-| pi | Exactly pi 1.0.3 and 1.0.4; Node.js 22.19.0 or newer | Built in, pinned extension | Yes | Yes, through pi's own prompt | Yes | Yes |
-| OpenAI Codex CLI | Proven with codex-cli 0.155.1 on macOS; the adapter does not check the version | Hook ADK reference adapter you review and register | Yes | No: a question becomes a refusal, recorded when witness storage is available | Yes, in Normal and Enforce: shell commands, single-file patches, MCP tool arguments | No; a result can be withheld |
+| pi | Exactly pi 1.0.3, 1.0.4 and 1.5.0; Node.js 22.19.0 or newer | Built in, pinned extension | Yes | Yes, through pi's own prompt | Yes | Yes |
+| OpenAI Codex CLI | codex-cli 0.159.0 or newer; contract-tested on codex-cli 0.164.0 on macOS arm64 and Linux x86_64; the adapter does not check the version | Hook ADK reference adapter, added by `isonapse setup` or the dashboard, or one you review and register | Yes | No: a question becomes a refusal, recorded when witness storage is available | Yes, in Normal and Enforce: shell commands, single-file patches, MCP tool arguments | No; a result can be withheld |
 | Your own agent | Your adapter, built with the Hook ADK (Python or TypeScript) | A host profile you register | Yes, if the host honors a refusal | As declared in your reviewed host profile | As declared | As declared |
 
-Isonapse governs Codex through the reference adapter you review and register,
-but Codex is a cooperative, fail-open host: it runs the tool when its hook
+Isonapse governs Codex through the reference adapter, which setup or the
+dashboard adds for you or you review and register yourself, but Codex is a
+cooperative, fail-open host: it runs the tool when its hook
 fails to start. It also runs the tool with no check when it has not trusted
 its hook definition. Only the Codex CLI is qualified; the ChatGPT desktop app
 runs the same `~/.codex` hooks, but it is unproven and unsupported.
 
-`isonapse hook status` warns when the registration, hook definition or pin of
-a registered host, or the Isonapse install, changed and no tool decision from
-that host followed, and it names the fix. For a fail-open host this is an
+`isonapse hook status` warns when the registration or pin of a registered
+host, the Codex `hooks.json`, or the Isonapse install changed, or a session of
+that host started, and no tool decision from that host followed, and it names
+the fix. It watches the hook definition or an activity file of another host
+only after you declare it with
+`isonapse hook host-profile evidence`. For a fail-open host this is an
 early warning, not a guarantee, so make one harmless call and confirm a new
 receipt with `isonapse hook report --host <id>` after setup, after every Codex
 or Isonapse update and after any change to the hook definitions.
@@ -72,9 +90,11 @@ page.
 
 ## First run
 
-A fresh install starts in Profile: ordinary work is allowed while Isonapse
-watches and learns. Review the policy it proposes
-(`isonapse hook suggest --user --diff`), then enforce it (`isonapse hook apply`):
+`isonapse hook init` starts in Profile: ordinary work is allowed while Isonapse
+watches and learns. `isonapse setup` starts a new machine in Normal, where your
+block and ask rules apply and Isonapse learns just the same. Review the policy it
+proposes (`isonapse hook suggest --user --diff`), then enforce it
+(`isonapse hook apply`):
 
     isonapse hook report                  # what Isonapse observed
     isonapse hook suggest --user --diff   # the proposed policy, as a diff
@@ -90,11 +110,11 @@ requires of each host are below and in the
 <summary><strong>Hermes Agent and pi</strong>: exact versions and required settings</summary>
 
 pi support requires one of the exactly qualified pi releases, currently pi
-1.0.3 and 1.0.4. The list is exact, not a minimum or a range: this release
+1.0.3, 1.0.4 and 1.5.0. The list is exact, not a minimum or a range: this release
 refuses every other pi version by design until it is qualified, including pi
 0.80.2. Install the newest with
-`npm install -g --ignore-scripts @earendil-works/pi-coding-agent@1.0.4` and
-confirm `pi --version` prints 1.0.3 or 1.0.4 before
+`npm install -g --ignore-scripts @earendil-works/pi-coding-agent@1.5.0` and
+confirm `pi --version` prints 1.0.3, 1.0.4 or 1.5.0 before
 `isonapse hook init --host pi`. `pi update` and the pi.dev installer always
 install the newest pi release, which this release may refuse until it is
 qualified. On a pi it has not qualified, or whose version it cannot verify
@@ -129,12 +149,13 @@ closed with `preparation-refused`; `isonapse hook doctor` reports it as
 unauthenticated Hook ingress. Hermes covers pre-tool authorization and session
 lifecycle but cannot ask or rewrite: an ASK becomes a DENY, recorded when
 witness storage is available. Gate mode is machine-wide, so a mode switch you
-make for another host applies to Hermes too. In Normal and Enforce, the gate's
+make for another host applies to Hermes too. In Enforce, the gate's
 first-action check denies the first tool call of every Hermes session, and the
 first after the Isonapse daemon restarts; retrying the same call once proceeds
 when policy permits it. Every other ask, such as one for a risky shell command,
 also becomes a DENY. An unreachable daemon makes Hermes refuse the call without
-a receipt. After a tool call in a fresh Hermes session,
+a receipt. Normal applies operator rules and the deterministic shell safety
+floor without a cold-start ask. After a tool call in a fresh Hermes session,
 `isonapse hook report --host hermes` shows the recorded decisions.
 
 </details>
@@ -150,40 +171,15 @@ detection models; all pinned models total 1.968 GB (1.833 GiB). No user
 content or telemetry is uploaded. `hook start` can make an opt-in GitHub
 release metadata check; `notify_on_update` defaults off.
 
-The verified script installer is the alternative to Homebrew. It installs
-under `~/.isonapse/bin` and does not edit your shell profile:
+The verified script installer is the alternative to Homebrew. It always
+downloads anonymously, even when your shell already has a GitHub token set.
+It installs under `~/.isonapse/bin` and does not edit your shell profile:
 
     curl -fsSL https://github.com/Isonapse/isonapse-public/releases/latest/download/install.sh | sh
     export PATH="$HOME/.isonapse/bin:$PATH"
 
 Add that export to your shell profile for future sessions, then run the same
 `hook init`, `hook start` and `hook status`.
-
-## Private alpha and beta channels
-
-Besides the public `main` channel, Isonapse publishes two private channels:
-`beta` for invited testers and `alpha` for the newest builds, ahead of beta,
-by invitation.
-Private channel access must be authorized to read
-`Isonapse/isonapse-releases`: use a fine-grained token with
-**Contents: Read-only** for that repository, or a classic token with the
-**`repo`** scope. Invited testers use the token from their invitation and
-unset it when the install finishes:
-
-    export HOMEBREW_GITHUB_API_TOKEN="YOUR_PRIVATE_BETA_TOKEN"
-    brew install isonapse/tap/isonapse-beta
-
-Private Homebrew upgrades need the token again; Docker image pulls need their
-own `docker login ghcr.io`.
-
-The private script installer needs the GitHub CLI (`gh`) on `$PATH`:
-
-    export GITHUB_TOKEN="YOUR_PRIVATE_BETA_TOKEN"
-    gh release download beta-latest \
-      --repo Isonapse/isonapse-releases \
-      --pattern install.sh \
-      --dir /tmp --clobber
-    CHANNEL=beta GITHUB_TOKEN="$GITHUB_TOKEN" sh /tmp/install.sh
 
 ## Upgrade
 
@@ -194,8 +190,14 @@ restart approves every monitored file as it then is.
 
     brew upgrade isonapse        # or rerun the script installer
     isonapse hook restart        # moves the daemon onto the installed build
-    isonapse hook adk-pin        # Codex CLI only: re-pin the upgraded Hook
+    isonapse hook adk-pin        # pin-file ADK hosts: re-pin the upgraded Hook
     isonapse hook status
+
+For Hermes Agent or pi, rerun `isonapse hook init --host hermes` or
+`isonapse hook init --host pi` once `hook restart` has run, as you first ran
+it, with `--project` from that project for a project-only pi install. Until
+then, `hook status` reports the upgraded adapter as failing its integrity
+check.
 
 After an authorized personal-plugin upgrade, rerun `isonapse hook init` once
 `hook restart` has run, and start a fresh Claude Code session to load
@@ -213,9 +215,9 @@ supplying a sudo password does not grant that permission.
 - **Profile** observes and reports. Structural limits, self-protection,
   refusals by the host integration itself and the identity checks that run
   before policy still apply from the first action.
-- **Normal** enforces your block rules and asks before risky shell commands.
-- **Enforce** also hard-blocks catastrophic commands, applies your ask
-  rules and uses the learned baseline.
+- **Normal** enforces your block and ask rules plus catastrophic and
+  non-bypassable shell safety.
+- **Enforce** adds behavioral review and uses the learned baseline.
 
 Gate mode is machine-wide, not per repository or per host.
 [Details](https://developer.isonapse.com/product#modes).
@@ -234,7 +236,7 @@ return {
 }
 ```
 
-Fourteen commented, loadable examples are in
+Fifteen commented, loadable examples are in
 [examples/policies](examples/policies): one ladder per policy field, one
 per Lua pattern. The policy surface is explained on the
 [product page](https://developer.isonapse.com/product#policy-example).
@@ -297,15 +299,16 @@ Propose a host profile with the "Host adapter or profile" issue template.
   local self-protection stops while the daemon is down carry no receipt.
   When the Hook gets no decision from the daemon, Claude Code falls back to
   its own approval prompt, and Isonapse records nothing you approve there.
-- A session's Isonapse identity lasts 8 hours on every host, in every mode.
-  After that, no tool call in the session is authorized: Codex and Hermes
-  refuse each call, while Claude Code, pi and other hosts that can ask you ask
-  for each call (without an approval prompt, the call is refused). A call you
-  approve runs without an Isonapse authorization receipt, and its output is
-  withheld from the model. Starting a new session (in Codex, a new thread)
-  recovers. Resuming the session does not renew the identity; for Claude Code,
-  only a resume in a new Claude Code process does (restart Claude Code, then
-  resume the session).
+- A session's Isonapse identity is renewed every 8 hours, in every mode,
+  with proof of the session key the Hook keeps. Claude Code renews it in place
+  at the session's next prompt, tool call, compaction or resume. The other
+  hosts renew it when the session is resumed (in Codex, resume the thread);
+  until then no tool call in the session is authorized: Codex and Hermes
+  refuse each call, while pi and other hosts that can ask you ask for each
+  call (without an approval prompt, the call is refused). A call you approve
+  runs without an Isonapse authorization receipt, and its output is withheld
+  from the model. If the Hook no longer holds the session's key, nothing
+  renews the session: start a new session (in Codex, a new thread).
 - PII and injection detectors can miss. Secret scrubbing protects exact
   values, not encoded or derived copies.
 - Withholding a result does not undo an action that already ran.
@@ -318,12 +321,27 @@ Full list: [guarantees and limits](https://developer.isonapse.com/product#guaran
     isonapse hook status    # does the daemon run the installed build; is each host ready
     isonapse hook report    # recent decisions
 
-Start with the
-[troubleshooting section of the install guide](https://developer.isonapse.com/install#troubleshooting).
+`isonapse hook --help` lists the commands, and `isonapse hook <command> --help`
+shows one command with its options and defaults. The
+[known problems below](#known-problems-and-fixes) cover the common cases.
 Pausing, disabling and uninstalling are described on the
 [install guide](https://developer.isonapse.com/install); the limits of
-disable and uninstall are summarized below. The command index and the
-troubleshooting guide are on docs.isonapse.com (sign-in required).
+disable and uninstall are summarized below.
+
+### Known problems and fixes
+
+| Problem | What to do |
+| --- | --- |
+| The daemon is not running or refuses to start | Run `isonapse hook start`, then `isonapse hook doctor`. Read the failure it reports and `controlplane.log` in the data directory (normally `~/.isonapse`). A missing required model is repaired with `isonapse hook intel download`, which also fetches the optional models. |
+| The installed, running or plugin versions disagree | Upgrade with the package manager you installed with, run `isonapse hook restart` and check `isonapse hook status`. With an authorized personal Claude Code plugin, also rerun `isonapse hook init`, then start a fresh Claude Code session and check `/hooks`. |
+| A skill or custom command is blocked before it runs | Run `isonapse hook skill check` and `isonapse hook skill diff`, and review the change against a trusted source. `isonapse hook skill trust` then accepts the current files; `isonapse hook skill untrust` revokes one until you trust it again. |
+| `[session-structural-capacity]` blocks in a long multi-agent session | The session reached its fixed limit of 512 distinct agent and capability pairs or 64 agents; every program or subcommand an agent runs in Bash is its own capability. No policy, approval or mode change clears it: after in-flight work and approvals settle, run `isonapse hook reset-structural --host <HOST> -- <SESSION_ID>` in your own terminal, or start a new session. A managed or unknown deployment refuses the reset. `isonapse hook status` prints a `Structural session capacity` line. |
+| Optional model assistance is unavailable | `isonapse hook intel status` shows whether the files are present, verified and in use. `isonapse hook intel download` provisions or repairs them; restart after a repair. Without them, narrower local checks still run. |
+| Codex refuses every tool call after an Isonapse upgrade | Run `isonapse hook restart`, then `isonapse hook adk-pin` to re-pin the upgraded Hook. |
+| Codex runs tools but no new receipt appears | Codex runs tools unchecked while it does not trust its hook definitions. Trust them again in Codex's `/hooks`, make one harmless call and confirm a new receipt with `isonapse hook report --host <id>`. |
+| `isonapse: command not found` after a script install | Add `~/.isonapse/bin` to your `PATH`, as in the install steps above. |
+| The installer stops with `unsupported platform`, a glibc error or `detected musl libc` | Builds exist only for macOS 11 or later on Apple silicon and Linux x86_64 with glibc 2.35 or later. Intel macOS and musl distributions such as Alpine are not supported. |
+| `sha256 mismatch` or `refusing to install an incomplete or inconsistent release archive` | The download was corrupt or incomplete, and the installer changed nothing. Run it again. |
 
 <details>
 <summary><strong>Disable and uninstall</strong>: what they keep, refuse and cannot guarantee</summary>
@@ -358,24 +376,15 @@ process before retrying or resolve the retained state manually.
 
 </details>
 
-## Releases and channels
+## Releases
 
 Every build is `0.3.0-beta+release.<short_sha>`. The CLI, the generated
 Claude Code plugin, the GitHub release title and the Homebrew formula all
 name that same build; Homebrew adds a numeric package revision to its own
 version. Paste the whole `isonapse --version` output when you report a bug.
 
-| Channel | What it is | Releases and access |
-| --- | --- | --- |
-| `main` | Public beta; default | this repository; anonymous |
-| `beta` | Invited testing | private, by invitation |
-| `alpha` | Newest builds, ahead of beta | private, by invitation |
-
-All public `main` installs are sourced from this repository; the private
-channels are described under
-[Private alpha and beta channels](#private-alpha-and-beta-channels).
-Install one channel at a time; uninstall the current formula before
-switching. Every archive ships a SHA-256 sidecar and a separately signed
+All public `main` installs are sourced from this repository and need no
+account or token. Every archive ships a SHA-256 sidecar and a separately signed
 identity binding its source commit, product, version, target and digest.
 The installer rejects any mismatch. Details are in the
 [install guide](https://developer.isonapse.com/install).
@@ -383,19 +392,18 @@ The installer rejects any mismatch. Details are in the
 ## Community Edition and beyond
 
 The Agent Hook is step one. The self-hosted Community Edition brings a
-team's sessions onto one dashboard under one policy and is in private beta
-for invited testers. Enterprise Edition for whole organisations follows.
+team's sessions onto one dashboard under one policy and is in public beta.
+Enterprise Edition for whole organisations follows.
 [Roadmap](https://developer.isonapse.com/roadmap)
 
 <details>
 <summary><strong>Optional containers</strong>, separate from the local Hook</summary>
 
-The CLI also provides `isonapse images`, `isonapse server` and
-`isonapse dashboard`. These optional launchers do not install or start Docker,
-embed the CE backend in the Hook, or establish a supported public CE release.
-Install Docker yourself; private GHCR packages require a separate Docker login
-authorized to read them. A Homebrew or release-download token does not sign
-Docker in.
+The easy install, `isonapse setup`, does these steps for you, and
+`isonapse setup --teardown` removes only what it made. To run them by hand,
+the CLI also provides `isonapse images`, `isonapse server` and
+`isonapse dashboard`. These optional launchers do not install or start Docker
+or embed the CE backend in the Hook. Install Docker yourself.
 
 Provision and retain an independent `ISONAPSE_BOOTSTRAP_SECRET` of at least 32
 bytes for first-administrator setup and a 64-character hex `ISONAPSE_DB_KEY`.
@@ -408,13 +416,20 @@ environment secret. Then run:
     isonapse dashboard start
 
 Open `http://127.0.0.1:3200/setup` once, enter the saved bootstrap secret and
-create the first administrator. Afterwards use `/sign-in`.
+create the first administrator. Afterwards use `/sign-in`. Over plain HTTP the
+dashboard keeps a session only on a loopback address (`127.0.0.1`, `localhost`,
+`[::1]`); to use it from another machine, put an HTTPS reverse proxy in front of
+it that passes the `Host` header on and sets `X-Forwarded-Proto: https`.
+
+If an AI agent on this machine can use the Docker that runs your server, that
+agent controls the server, its records and its keys, and Isonapse cannot protect
+the server from it. When the records must hold against your agents, run the
+server on another machine, or under another account with its own Docker.
 
 The launchers bind only localhost (server 8080, dashboard 3200), retain the
 server's data volume and never mount the host Docker socket. Image tags bind
-the selected installation channel and full source revision: public main uses
-`ghcr.io/isonapse/server`, `dashboard` and `controlplane`; private alpha/beta
-use their `-preview` counterparts, with `candidate-<full-source-sha>` tags.
+the full source revision: the launchers use `ghcr.io/isonapse/server`,
+`dashboard` and `controlplane` with `candidate-<full-source-sha>` tags.
 Images must be published and accessible. Brew and script installation record the
 channel automatically; raw archives and development builds without that verified
 context require explicit image references. Tags are source pins, not digest pins.
@@ -424,10 +439,10 @@ Launcher `--image` overrides the corresponding `ISONAPSE_SERVER_IMAGE` or
 prints all three embedded image assignments for a Compose `--env-file`; it
 does not apply launcher overrides.
 
-For upgrades or channel switches, back up data and keys and check schema
-compatibility first. A different running image is refused: stop explicitly,
-update the CLI, inspect the new image references and restart. Volumes persist;
-there is no automatic cross-channel migration or rollback guarantee. See the
+For upgrades, back up data and keys and check schema compatibility first.
+A different running image is refused: stop explicitly, update the CLI,
+inspect the new image references and restart. Volumes persist; there is no
+automatic migration or rollback guarantee. See the
 [installation guide](https://developer.isonapse.com/install) before proceeding.
 
 </details>
@@ -436,9 +451,10 @@ there is no automatic cross-channel migration or rollback guarantee. See the
 
 This is proprietary software, free of charge during the public beta for
 personal testing, research, and internal, non-production evaluation.
-Downloading, installing, or using it means you accept the Isonapse Agent Hook
-Public Beta EULA in [LICENSE.md](LICENSE.md). Production and commercial use
-are not covered by the beta license — contact licensing@isonapse.com.
+Downloading, installing, or using it means you accept the Isonapse Public Beta
+EULA in [LICENSE.md](LICENSE.md), which covers the Agent Hook and Community
+Edition. Production and commercial use are not covered by the beta license —
+contact licensing@isonapse.com.
 
 Attribution for the third-party code and models bundled with Isonapse lives
 in `THIRD_PARTY_DEPENDENCIES.md` and `THIRD_PARTY_NOTICES.md` — included in
