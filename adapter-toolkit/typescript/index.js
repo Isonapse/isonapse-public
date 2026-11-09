@@ -9,6 +9,41 @@ const MAX_TIMEOUT = 50_000;
 const MAX_BINARY = 1024 * 1024 * 1024;
 const MAX_LINKS = 8;
 const boundaries = new WeakMap();
+// The Hook's JSON value model: i64 negatives and u64 positives. Outside this
+// range serde_json may decode a literal as a float, so exact integer handling
+// is no longer possible end to end.
+const MIN_INTEGER = -(1n << 63n);
+const MAX_INTEGER = (1n << 64n) - 1n;
+const integer = value => {
+  if (value < MIN_INTEGER || value > MAX_INTEGER) throw Error();
+  return value;
+};
+
+// Node >=22 exposes the original number token to a JSON.parse reviver. Never
+// recover an integer from the rounded Number: use its source, or refuse it.
+function parseJson(text) {
+  return JSON.parse(text, (_key, value, context) => {
+    if (typeof value === "number" && /^-?(?:0|[1-9][0-9]*)$/.test(context?.source ?? "")) {
+      if (context.source.length > 21) throw Error();
+      const exact = integer(BigInt(context.source));
+      return Number.isSafeInteger(value) ? value : exact;
+    }
+    // A runtime without the source hook, or an unsafe integral float token,
+    // cannot supply a trustworthy exact integer. The ordinary JSON validator
+    // rejects it; there is no rounded fallback.
+    return value;
+  });
+}
+
+function encodeJson(value) {
+  return JSON.stringify(value, (_key, item) => {
+    if (typeof item !== "bigint") return item;
+    // This API is in supported Node runtimes. Missing support refuses the
+    // operation instead of converting the integer to a Number or a string.
+    if (typeof JSON.rawJSON !== "function") throw Error();
+    return JSON.rawJSON(item.toString());
+  });
+}
 /**
  * No usable decision. `code` names the cause class when the Hook could not be
  * consulted: `hook-identity:<cause>`, `hook-transport` or `hook-protocol`.
@@ -24,7 +59,11 @@ const object = value => value !== null && typeof value === "object" && !Array.is
 function jsonValue(value,depth=0) {
   if (depth > 256) throw Error();
   if (value === null || typeof value === "boolean") return value;
-  if (typeof value === "number") {if (!Number.isFinite(value)) throw Error(); return value;}
+  if (typeof value === "bigint") return integer(value);
+  if (typeof value === "number") {
+    if (!Number.isFinite(value) || (Number.isInteger(value) && !Number.isSafeInteger(value))) throw Error();
+    return value;
+  }
   if (typeof value === "string") {if (!value.isWellFormed()) throw Error(); return value;}
   if (!object(value) && !Array.isArray(value)) throw Error();
   const array=Array.isArray(value), prototype=Object.getPrototypeOf(value);
@@ -44,10 +83,19 @@ function jsonValue(value,depth=0) {
 
 export function snapshot(value) {
   try {
-    const encoded=JSON.stringify(jsonValue(value));
+    const encoded=encodeJson(jsonValue(value));
     if (Buffer.byteLength(encoded)>MAX_BYTES) throw Error();
-    return JSON.parse(encoded);
+    return parseJson(encoded);
   } catch {throw new Unavailable("Host event is not bounded plain JSON");}
+}
+
+/** Serialize bounded plain JSON, preserving decoded bigint integers exactly. */
+export function stringifyJson(value) {
+  try {
+    const encoded = encodeJson(jsonValue(value));
+    if (Buffer.byteLength(encoded) > MAX_BYTES) throw Error();
+    return encoded;
+  } catch { throw new Unavailable("Value is not bounded lossless JSON"); }
 }
 
 // JSON.parse validates syntax first; this second bounded pass rejects duplicate
@@ -80,7 +128,7 @@ export function decodeHostEvent(raw) {
   try {
     if (Buffer.byteLength(raw) > MAX_BYTES) throw Error();
     const text = new TextDecoder("utf-8", {fatal:true}).decode(Buffer.from(raw));
-    const value = JSON.parse(text);
+    const value = parseJson(text);
     if (!object(value)) throw Error();
     jsonValue(value);
     uniqueKeys(text);
@@ -94,12 +142,13 @@ export function decode(raw, boundary) {
   try {
     if (Buffer.byteLength(raw) > MAX_BYTES || !["pre","post","lifecycle"].includes(boundary)) throw Error();
     const text = new TextDecoder("utf-8", {fatal:true}).decode(Buffer.from(raw));
-    const value = JSON.parse(text);
+    const value = parseJson(text);
     jsonValue(value);
     uniqueKeys(text);
     if (!object(value) || value.protocolVersion !== 1 || !["allow","deny","ask","unavailable"].includes(value.decision)) throw Error();
     for (const field of ["reason","operatorMessage"]) if (field in value && typeof value[field] !== "string") throw Error();
     if ("retryable" in value && typeof value.retryable !== "boolean") throw Error();
+    if ("additionalContext" in value && (boundary !== "pre" || !["allow","ask"].includes(value.decision) || typeof value.additionalContext !== "string" || !value.additionalContext.trim() || Buffer.byteLength(value.additionalContext) > 64 * 1024)) throw Error();
     if ("effectiveInput" in value && !object(value.effectiveInput)) throw Error();
     if (value.decision === "allow" && ("reason" in value || "retryable" in value)) throw Error();
     if (value.decision !== "allow" && !value.reason?.trim()) throw Error();
@@ -110,7 +159,7 @@ export function decode(raw, boundary) {
     if (value.decision === "ask" && boundary !== "pre") throw Error();
     // Return only known fields: extension fields never grant authority.
     const result = {protocolVersion:1, decision:value.decision};
-    for (const field of ["reason","effectiveInput","updatedOutput","operatorMessage","retryable"]) {
+    for (const field of ["reason","effectiveInput","updatedOutput","operatorMessage","retryable","additionalContext"]) {
       if (field in value) result[field] = value[field];
     }
     boundaries.set(result,boundary);
@@ -392,7 +441,7 @@ export class Client {
     if (["pre","post"].includes(boundary) && (typeof request.tool_use_id !== "string" || !request.tool_use_id)) throw new TypeError("Stable native tool-call identity required");
     let payload;
     try {
-      payload = Buffer.from(JSON.stringify(snapshot(request)));
+      payload = Buffer.from(stringifyJson(snapshot(request)));
     } catch { throw new Unavailable("Host event is not JSON"); }
     const executable = await this.installed.verify();
     const raw = await exchange([executable,event,"--host",this.host,"--adapter-protocol","1"],payload,this.timeoutMs,signal);

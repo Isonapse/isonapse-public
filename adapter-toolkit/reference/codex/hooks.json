@@ -11,7 +11,29 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'__NODE__' '__ADAPTER__' --hook '__HOOK__' --hook-sha256-file '__HOOK_SHA256_FILE__' --host '__HOST_ID__'",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'__NODE__' '__ADAPTER__' --hook '__HOOK__' --hook-sha256-file '__HOOK_SHA256_FILE__' --host '__HOST_ID__'",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
       {
         "hooks": [
           {

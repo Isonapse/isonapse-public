@@ -7,15 +7,25 @@
 -- standalone `git reset --hard`, but only after the policy, rate, structural,
 -- shift, and evidence gate permits it. LEARNED is the cautious alternative: it
 -- skips that veto but still requires the learned gate's capability/safety scope
--- and two-of-three quorum. It carries seven sub-fields:
+-- and two-of-three quorum. It supports these fields:
 --
 --   decision         — "PERMIT" | "DENY" | "DEFER" | "LEARNED". Required.
 --                      DENY blocks; PERMIT is direct operator trust; DEFER
 --                      always asks; LEARNED explicitly routes to the learned
---                      gate (and cannot unlock a catastrophic verb).
+--                      gate (and cannot unlock a catastrophic verb). A
+--                      catastrophic verb (sudo, dd, mkfs, reboot, ...) stays
+--                      hard-denied in Enforce unless the rule names it: a
+--                      PERMIT on the standalone command, or a DEFER on each
+--                      catastrophic command of a chain. A DEFER on another
+--                      command of the chain, or on `tool:Bash:%compound`,
+--                      does not relax it.
 --   reason           — free-form text. Surfaces in the denial message and
 --                      the witness chain. Operators read this when
 --                      debugging "why was X blocked?"
+--   defer_unless_local_bin
+--                    — true on DEFER for npx, bunx or npm exec. The
+--                      conditional ask is skipped only for a verified local
+--                      node_modules/.bin program in a known working directory.
 --   trust            — "local" | "external". Drives the PII data
 --                      perimeter. Defaults to "external" for unmapped
 --                      capabilities (fail-safe).
@@ -73,6 +83,44 @@ return {
       reason = "destructive — use trash-cli or a scoped script",
     },
 
+    -- Package launchers can fetch and run code. The three Node launchers
+    -- skip this ask only when the Hook proves the plain command is local.
+    ["tool:Bash:bunx"] = {
+      decision = "DEFER",
+      reason = "Download-and-run launcher requires operator approval.",
+      defer_unless_local_bin = true,
+    },
+    ["tool:Bash:npm:exec"] = {
+      decision = "DEFER",
+      reason = "Download-and-run launcher requires operator approval.",
+      defer_unless_local_bin = true,
+    },
+    ["tool:Bash:npx"] = {
+      decision = "DEFER",
+      reason = "Download-and-run launcher requires operator approval.",
+      defer_unless_local_bin = true,
+    },
+    ["tool:Bash:pipx:run"] = {
+      decision = "DEFER",
+      reason = "Download-and-run launcher requires operator approval.",
+    },
+    ["tool:Bash:pnpm:dlx"] = {
+      decision = "DEFER",
+      reason = "Download-and-run launcher requires operator approval.",
+    },
+    ["tool:Bash:uv:tool-run"] = {
+      decision = "DEFER",
+      reason = "Download-and-run launcher requires operator approval.",
+    },
+    ["tool:Bash:uvx"] = {
+      decision = "DEFER",
+      reason = "Download-and-run launcher requires operator approval.",
+    },
+    ["tool:Bash:yarn:dlx"] = {
+      decision = "DEFER",
+      reason = "Download-and-run launcher requires operator approval.",
+    },
+
     -- Database client. PII allowlist permits a specific connection
     -- string pattern through unmasked (it would otherwise be tokenised
     -- as a db_connection_string PII entity and break the query). The
@@ -85,7 +133,7 @@ return {
       reason = "trusted database client",
       trust = "local",
       pii_allowlist = {
-        "^postgres://[^@]+@(localhost|127%.0%.0%.1|dev%-db).*$",
+        [[^postgres://[^@]+@(localhost|127\.0\.0\.1|dev-db)(:[0-9]+)?(/.*)?$]],
       },
       secret_allowlist = {
         "email",

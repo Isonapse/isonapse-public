@@ -11,6 +11,11 @@ from unittest import mock
 
 from isonapse_hook_adk import Client, InstalledHook, Refused, Unavailable, decode
 from isonapse_hook_adk.hook_command import HOOK_COMMAND_EVENTS, hook_command, read_host_event
+from test_adk import trusted_scratch_parent
+
+
+def setUpModule():
+    tempfile.tempdir = trusted_scratch_parent()
 
 
 def wire(decision="allow", **fields):

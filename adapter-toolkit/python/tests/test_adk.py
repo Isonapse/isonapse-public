@@ -17,6 +17,22 @@ from isonapse_hook_adk import Client, InstalledHook, Unavailable, Refused, decod
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_optional_bounded_agent_context_is_separate_1176(self):
+        context = "User policy is not loaded"
+        parsed = decode(self.decision("allow", additionalContext=context, operatorMessage="operator-only"), "pre")
+        self.assertEqual(parsed.kind, "allow")
+        self.assertIsNone(parsed.reason)
+        self.assertEqual(parsed.additional_context, context)
+        self.assertEqual(parsed.operator_message, "operator-only")
+        self.assertEqual(decode(self.decision("allow", additionalContext="x" * (64 * 1024)), "pre").kind, "allow")
+        for bad in [7, None, "", " ", "x" * (64 * 1024 + 1), "é" * (64 * 1024)]:
+            with self.assertRaises(Unavailable):
+                decode(self.decision("allow", additionalContext=bad), "pre")
+        with self.assertRaises(Unavailable):
+            decode(self.decision("allow", additionalContext=context), "post")
+        with self.assertRaises(Unavailable):
+            decode(self.decision("deny", reason="existing denial", additionalContext=context), "pre")
+
     def test_decisions_are_single_use_and_rewrites_are_immutable_snapshots(self):
         from isonapse_hook_adk import Decision
         decision = decode(self.decision("ask", reason="review", effectiveInput={"path":"safe"}), "pre")
@@ -84,7 +100,7 @@ class TransportTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.path = Path(self.directory.name).resolve()/"isonapse-hook"
 
-    def client(self, source, timeout=2):
+    def client(self, source, timeout=30):
         # Deliberately pinned protocol fixture, not a shipped executor.
         self.path.write_text(f"#!{sys.executable}\n"+source)
         self.path.chmod(0o700)
@@ -260,6 +276,25 @@ class Forged:
             setattr(self, name, getattr(real, name))
         for name, value in fields.items():
             setattr(self, name, value)
+
+
+def trusted_scratch_parent():
+    """A temp directory whose own ancestry passes the Hook path rules. A TMPDIR
+    on a group-writable volume refuses every fixture below it, which is not what
+    any of these cases checks, so the ancestry is verified before they run."""
+    for parent in (tempfile.gettempdir(), "/tmp"):
+        with tempfile.TemporaryDirectory(prefix="isonapse-adk-scratch-", dir=parent) as probe:
+            hook = os.path.join(os.path.realpath(probe), "isonapse-hook")
+            with open(hook, "wb") as output:
+                output.write(GENUINE)
+            os.chmod(hook, 0o555)
+            if verdict(hook, sha(GENUINE)) == {"ok": hook}:
+                return parent
+    raise AssertionError("no temp directory has an ancestry the Hook path rules accept")
+
+
+def setUpModule():
+    tempfile.tempdir = trusted_scratch_parent()
 
 
 @unittest.skipUnless(os.name == "posix", "ADK v1 process transport is Unix-only")

@@ -107,7 +107,10 @@ never on the message text. No message names a path.
 | `hook-transport` | The verified Hook could not be started, its transport failed, or the transport budget was invalid or cancelled. |
 | `hook-protocol` | The Hook answered with an invalid or incompatible Protocol v1 response or version. |
 
-Surface `operatorMessage` to the operator. Do not parse reason strings. Human
+Surface `operatorMessage` only to the operator. Render optional
+`additionalContext` in a supported agent-context channel on pre-action allow or
+approved ask, preserving the decision. It is separate from operator notes, is
+non-empty and at most 64 KiB, and older v1 clients ignore it. Do not parse reason strings. Human
 approval is a host action, not proof of an Isonapse receipt. Report the actual
 applied input, outcome and same call ID at completion; never retry a tool effect
 to retry its completion. Capabilities the native host cannot enforce must be
@@ -121,6 +124,25 @@ outside the group. Transport errors do not expose raw subprocess diagnostics.
 In the toolkit's source tree, `npm test` runs the real exported library against
 explicitly pinned subprocess protocol fixtures. Those tests are distinct from
 live daemon/receipt conformance.
+
+### Exact JSON integers
+
+Decode host bytes with `decodeHostEvent` or `readHostEvent`, and encode an
+answer with `stringifyJson` from the main entry point. Integer literals outside
+JavaScript's safe-number range become `bigint`; snapshots, transport and exact
+replacement comparisons keep them intact. `stringifyJson` writes them as JSON
+numbers, never as strings. Ordinary `JSON.stringify` cannot encode these
+values. Node.js 22 or later remains required; unavailable lossless JSON support
+refuses the operation.
+
+Native callbacks may receive `bigint` values. Only apply them when the native
+host can preserve them exactly; otherwise refuse. The `replaceExecutableInput`
+helper refuses a `bigint` replacement before changing the executable object,
+because that JavaScript host seam has no declared exact-integer support.
+Already-unsafe JavaScript `number` inputs are refused because their original
+integer cannot be recovered. Both ADKs refuse integer values below `-2^63` or
+above `2^64-1`, outside the Hook's exact JSON integer range. Decimal or exponent
+number tokens that decode to an unsafe integral `number` are refused too.
 
 ## Hook-command hosts
 

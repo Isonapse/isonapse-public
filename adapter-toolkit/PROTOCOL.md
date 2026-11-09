@@ -13,6 +13,13 @@ JSON object on stdout:
 {"protocolVersion":1,"decision":"allow","effectiveInput":{"command":"…"}}
 ```
 
+Integer values must remain exact from the host event through the Hook and any
+replacement applied by the host. The Hook's exact JSON integer range is
+`-2^63` through `2^64-1`; refuse values outside it. JavaScript adapters must
+preserve integer tokens outside the safe-number range with a lossless decoder
+and serializer, or refuse them. An already-rounded number is never an
+acceptable replacement for the integer the host or Hook supplied.
+
 ## Response fields
 
 | Field | Contract |

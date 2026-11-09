@@ -28,6 +28,11 @@ version alone does not identify the release it came from; the toolkit's
 installing the wheel from a newer release's toolkit into that environment;
 remove it with `python3 -m pip uninstall isonapse-hook-adk`.
 
+JSON integer inputs and replacements remain Python `int` values and are
+forwarded exactly. Both ADKs refuse integers below `-2^63` or above `2^64-1`,
+outside the Hook's exact JSON integer range, rather than let the Hook read one
+as a rounded floating-point value.
+
 ## Native callback API
 
 `python -m isonapse_hook_adk init agent.py` creates a non-overwriting native Read
@@ -145,6 +150,10 @@ a Python per-event adapter has not been proven against the real daemon.
 ## Operating rules
 
 Always surface `decision.operator_message` through the host's operator channel.
+Render optional `decision.additional_context` through a supported agent-context
+channel on pre-action allow or approved ask, preserving the decision. This
+non-empty context is at most 64 KiB; keep it separate from operator notes. Older
+v1 clients ignore the optional field.
 Never parse reason text to make a decision. Host approval is not proof of a
 durable Isonapse receipt. Report completion using the same call ID and the actual
 applied input, even when the native effect failed. A completion retry must not

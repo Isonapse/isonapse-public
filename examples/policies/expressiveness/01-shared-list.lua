@@ -6,10 +6,14 @@
 -- you write it once.
 --
 -- Here we have a list of production database identifiers that should be
--- denied as a CAPABILITY (so nobody invokes them), excluded from the
--- DOMAIN allowlist (so nothing reaches them by hostname), and blocked
+-- denied as a custom CAPABILITY, denied by the
+-- DOMAIN blocklist (so nothing reaches them by hostname), and blocked
 -- from FILE-WRITE paths (so config files referencing them stay
 -- read-only). Editing the list updates all three sites at once.
+--
+-- The database capability assumes a client reports its target host in that
+-- identifier. The Hook's Bash `psql` reports only `tool:Bash:psql`, so this
+-- custom capability list does not restrict an ordinary psql command by host.
 
 local PROD_DBS = {
   "prod-db-1",
@@ -50,7 +54,7 @@ return {
   policy_version = "shared-list-v1",
 
   blocked_capabilities = {
-    ["agent:*"] = blocked_capability_list(),
+    ["*"] = blocked_capability_list(),
   },
 
   blocked_domains = {

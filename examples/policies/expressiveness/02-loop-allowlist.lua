@@ -1,12 +1,12 @@
 -- 02-loop-allowlist.lua — table-build loop generates per-subcommand rules.
 --
 -- This example PERMITs git ONLY when the subcommand is one of
--- {status, log, diff, show, branch, stash}. Everything else falls through
+-- {status, log, diff, show}. Everything else falls through
 -- to the gate's default layers (the destructive veto knocks
 -- `git reset --hard` down to "ask the human"; the learned gate may permit
 -- benign subcommands it has seen before).
 --
--- This is an ALLOWLIST: the unlisted case defers to a human. Expressing it
+-- This is an ALLOWLIST: unlisted commands keep the gate's remaining checks. Expressing it
 -- as `tool:Bash:git = PERMIT` plus a check_action that denies the bad
 -- subcommands would be a BLOCKLIST, where a git subcommand nobody thought
 -- of is permitted by default. That is the whole lesson.
@@ -25,15 +25,16 @@ local READ_ONLY_GIT = {
   "log",
   "diff",
   "show",
-  "branch",
-  "stash",  -- stash list / pop are reversible; not strictly read-only but operator-trusted
 }
+
+-- Do not add branch or stash here: their capabilities also cover
+-- `git branch -D`, `git stash clear` and `git stash drop`.
 
 local actions = {}
 for _, sub in ipairs(READ_ONLY_GIT) do
   actions["tool:Bash:git:" .. sub] = {
     decision = "PERMIT",
-    reason = "read-only or reversible git subcommand",
+    reason = "read-only git subcommand",
     trust = "local",  -- git runs on this host
   }
 end

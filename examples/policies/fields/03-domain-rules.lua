@@ -29,7 +29,7 @@
 --   * tool:WebFetch -> https://api.example.com/x   -> PERMIT (matches allowlist)
 --   * tool:WebFetch -> https://docs.example.com/y  -> PERMIT (*.example.com)
 --   * tool:WebFetch -> https://evil.example.com/z  -> DENY (blocklist hits first)
---   * tool:WebFetch -> https://other.com/w         -> DENY (allowlist excludes)
+--   * tool:WebFetch -> https://other.example/w     -> DENY (allowlist excludes)
 
 return {
   policy_version = "domain-rules-v1",

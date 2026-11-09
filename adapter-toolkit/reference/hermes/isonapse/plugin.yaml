@@ -4,6 +4,7 @@ description: "Gates audited Hermes pre-tool calls, witnesses session lifecycle, 
 author: "Isonapse"
 hooks:
   - pre_tool_call
+  - pre_llm_call
   - transform_tool_result
   - on_session_start
   - on_session_end

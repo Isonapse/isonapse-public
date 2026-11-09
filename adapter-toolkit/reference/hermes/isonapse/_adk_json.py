@@ -19,6 +19,8 @@ def _validate(value, depth=0):
         raise ValueError("JSON nesting limit")
     if isinstance(value, str):
         value.encode("utf-8", errors="strict")
+    elif type(value) is int and not -(1 << 63) <= value < (1 << 64):
+        raise ValueError("integer outside the Hook JSON range")
     elif isinstance(value, float) and not math.isfinite(value):
         raise ValueError("non-finite JSON number")
     elif isinstance(value, list):

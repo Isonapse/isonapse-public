@@ -40,7 +40,7 @@ return {
     -- floor — destructive veto can be overridden by an explicit
     -- operator PERMIT in `actions` (see 05-action-rules.lua); a
     -- blocked_capabilities DENY cannot.
-    ["agent:*"] = {
+    ["*"] = {
       "tool:Bash:sudo",
       "tool:Bash:dd",
     },

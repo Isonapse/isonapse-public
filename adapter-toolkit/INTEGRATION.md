@@ -106,11 +106,13 @@ tolerate extra fields but never guess at a different version.
 
 Every Isonapse release ships a new Hook binary, so its SHA-256 changes with
 every upgrade. Until the pin is updated, the ADK refuses every event with the
-`pin mismatch` cause. The reference Codex adapter denies every tool call and
-withholds every result, and SessionStart and SessionEnd only log the cause:
-the host's tool calls are blocked, not ungoverned.
+`pin mismatch` cause. The reference Codex adapter blocks every prompt, denies
+every tool call and every permission request and withholds every result, and
+SessionStart and SessionEnd only log the cause: the host is blocked, not
+ungoverned.
 
-With a pin file (step 5, recommended):
+With a pin file (step 5, recommended), `isonapse update` does the first two steps
+for you. By hand:
 
 1. Upgrade (`brew upgrade`, or the install script), then run
    `isonapse hook restart`.
@@ -159,8 +161,9 @@ as its target's. Declare other
 definition or activity files with
 `isonapse hook host-profile evidence <name> --definition <path> --activity <path>`,
 which asks for OS authentication like registration. Self-protection refuses an
-agent's change through that command, run directly, through a wrapper or as a
-shell's script argument, but not one piped into a shell. Any process running
+agent's direct change through that command; it is a best-effort check of
+direct tool arguments.
+Any process running
 as you can also change the declaration file itself: a replacement by a link,
 or by something other than a regular file, shows as a warning (so does a
 hard-link backup of it, which looks the same as `ln -f`), but a rewrite by a

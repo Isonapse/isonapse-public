@@ -8,6 +8,14 @@
  */
 export function replaceExecutableInput(target, replacement) {
 	try {
+		const hasBigInt = value => typeof value === "bigint" || (value !== null && typeof value === "object"
+			&& Reflect.ownKeys(value).some(key => {
+				const descriptor = Reflect.getOwnPropertyDescriptor(value, key);
+				return descriptor && "value" in descriptor && hasBigInt(descriptor.value);
+			}));
+		if (hasBigInt(replacement)) {
+			return "isonapse: this native host cannot apply an exact bigint replacement; action was not authorized";
+		}
 		const currentKeys = Reflect.ownKeys(target);
 		const nextKeys = Reflect.ownKeys(replacement);
 		const nextEntries = [];

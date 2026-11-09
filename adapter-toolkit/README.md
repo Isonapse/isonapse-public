@@ -113,10 +113,11 @@ for it (`@isonapse/hook-adk/hook-command`, `isonapse_hook_adk.hook_command`):
 strict stdin decoding, one decision at the right boundary through the installed
 Hook, and a typed outcome to branch on. The adapter renders the host's wire
 format itself. `reference/codex/` is the maintained example. Codex is a
-cooperative, fail-open host, and the reference is proven only with the
-codex-cli versions listed in `reference/codex/supported-versions.json`. Read its
-README for the capability boundary, the install, upgrade and uninstall steps,
-and what the model sees.
+cooperative, fail-open host. The reference is for codex-cli 0.159.0 or newer
+and contract-tested only on the versions `reference/codex/supported-versions.json`
+qualifies; other versions are unqualified. Read its README for the capability
+boundary, the version policy, the install, upgrade and uninstall steps, and
+what the model sees.
 
 ## Before you register a host
 
@@ -139,7 +140,8 @@ and what the model sees.
   output replacement is the adapter's job to withhold.
 - **Events the registered id accepts.** Session start/end and pre/post-tool
   only (plus the prompt boundary when declared). `stop` and every other native
-  event fail closed for a registered id.
+  event fail closed for a registered id; without the declared boundary a
+  prompt is blocked, never sent unchecked.
 - **Operator terminal.** Register from a normal terminal with OS
   authentication, never from inside the agent you are governing.
 - **Adapter location.** Keep the adapter directory, including its
@@ -167,7 +169,7 @@ and what the model sees.
 - `template/`: executable Python scaffold that is green before customization.
 - `reference/hermes/` and `reference/pi/`: shipped host-side glue for comparison.
 - `reference/codex/`: the OpenAI Codex CLI hook-command reference adapter,
-  its `hooks.json` template, its supported-versions list and README
+  its `hooks.json` template, its version policy (`supported-versions.json`) and README
   (registered host; input replacement only).
 
 Report toolkit bugs and propose host profiles in the public repository's issue

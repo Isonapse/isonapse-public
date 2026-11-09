@@ -58,7 +58,11 @@ def _object(value: Any) -> bool:
 def _json_value(value: Any, depth: int = 0) -> None:
     if depth > 256:
         raise ValueError("JSON nesting limit")
-    if value is None or type(value) in (bool, int):
+    if value is None or type(value) is bool:
+        return
+    if type(value) is int:
+        if not -(1 << 63) <= value < (1 << 64):
+            raise ValueError("integer outside the Hook JSON range")
         return
     if isinstance(value, float):
         if not math.isfinite(value):
@@ -98,6 +102,7 @@ class Decision:
     operator_message: str | None = None
     retryable: bool | None = None
     _boundary: str | None = None
+    additional_context: str | None = None
 
 _decisions = weakref.WeakKeyDictionary()
 
@@ -121,6 +126,8 @@ def decode(raw: bytes, boundary: Literal["pre", "post", "lifecycle"]) -> Decisio
             raise ValueError()
         if "effectiveInput" in data and not _object(data["effectiveInput"]):
             raise ValueError()
+        if "additionalContext" in data and (boundary != "pre" or kind not in ("allow", "ask") or not isinstance(data["additionalContext"], str) or not data["additionalContext"].strip() or len(data["additionalContext"].encode("utf-8")) > 64 * 1024):
+            raise ValueError()
         if kind == "allow" and ("reason" in data or "retryable" in data):
             raise ValueError()
         if kind != "allow" and not data.get("reason", "").strip():
@@ -137,7 +144,7 @@ def decode(raw: bytes, boundary: Literal["pre", "post", "lifecycle"]) -> Decisio
             raise ValueError()
         result = Decision(kind, data.get("reason"), data.get("effectiveInput"),
                         data.get("updatedOutput"), "updatedOutput" in data,
-                        data.get("operatorMessage"), data.get("retryable"), boundary)
+                        data.get("operatorMessage"), data.get("retryable"), boundary, data.get("additionalContext"))
         _decisions[result] = (boundary,
             json.dumps(data["effectiveInput"]) if "effectiveInput" in data else None,
             json.dumps(data["updatedOutput"]) if "updatedOutput" in data else None)

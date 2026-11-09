@@ -9,7 +9,7 @@ unknown `--host` id is the registration handshake.
 | --- | --- | --- |
 | `hermes` | `reference/hermes/` | pre-action refusal and lifecycle; no trusted output perimeter |
 | `pi` | `reference/pi/` | input rewrite, output rewrite, and native ask |
-| `adk-codex-<digest>` (operator-registered) | `reference/codex/` | input rewrite only (shell command, single-file `apply_patch`, MCP arguments); no ask; no exact output replacement (a result can only be withheld); cooperative fail-open host; proven with codex-cli 0.155.1 on macOS |
+| `adk-codex-<digest>` (operator-registered) | `reference/codex/` | input rewrite (shell command, single-file `apply_patch`, MCP arguments) and the prompt boundary (a prompt can be blocked, not rewritten); no ask; no exact output replacement (a result can only be withheld); Codex's own permission requests are always denied; cooperative fail-open host; codex-cli 0.159.0 or newer, contract-tested on 0.164.0 on macOS arm64 and Linux x86_64 |
 
 Builtin profiles retain their audited native mappings. Additional runtimes use
 operator-admitted profiles with canonical events and tool inputs. Profile data
@@ -142,14 +142,35 @@ and hold exactly one lowercase SHA-256. Anything else is a `pin-file-missing`,
 
 A registered id maps exactly `session-start`, `session-end`, `pre-tool-use`,
 `post-tool-use` and, only when the profile declares `--prompt-boundary`,
-`user-prompt-submit`. Every other native event, including `stop`, fails closed
-in all gate modes with an unknown-event refusal and no receipt. The conformance
+`user-prompt-submit`. Every other event fails closed in all gate modes and
+writes no receipt: `stop` and an unknown event get an unknown-event stop; a
+`user-prompt-submit` from a profile without `--prompt-boundary` is blocked with
+`Reason [prompt-boundary-undeclared]`, so the prompt is not sent unchecked; and
+an event that a host cannot refuse (`subagent-start`, `subagent-stop`,
+`instructions-loaded`, `post-compact`) passes with a warning that it was not
+checked or recorded. The conformance
 suite's `stop-lifecycle` case drives a stub hook that answers `stop`; it exists
 for the builtin mappings and does not show that the real Hook accepts `stop`
 from a registered id, which it does not. An adapter for a registered id must
 therefore not wire a per-turn stop hook. Wire session start, session end and
 the pre/post-tool pair, and declare the prompt boundary only when the host can
 veto a prompt natively.
+
+A prompt registers the session's stated intent, which intent-deviation
+detection compares later actions with, only when the profile also declares
+`--approval`. Without it the host cannot ask, and a deviation DEFER would
+reach it as a witnessed DENY, so its prompts feed the PII check and, when
+session-purpose capture is enabled, the session's purpose record only; the
+control plane decides this by the declared capability, not by the profile's
+name. `reference/codex/` is such a host.
+
+A host that asks its own user to approve an escalation (Codex's
+PermissionRequest) has no event of its own. Its adapter sends the request as
+a `pre-tool-use` of the reserved tool `HostPermissionRequest`, whose input is
+the host's tool name and input, and must answer the host with a denial
+whatever the Hook says. The control plane denies that tool for every
+registered id in every gate mode and writes one witnessed DENY; no policy can
+permit it. `reference/codex/` is the example.
 
 ### Hook-command hosts
 
@@ -163,18 +184,19 @@ render the host's wire format yourself. Every answer must be explicit: such a
 host typically runs the tool when a hook crashes, times out, is missing or
 answers in an unsupported shape (see the fail-open checklist in `README.md`).
 
-`reference/codex/` is proven with OpenAI codex-cli 0.155.1 on macOS against
-the real daemon, Hook and packages, one process per event, in Profile, Normal
-and Enforce, and with the real `codex exec` binary against a scripted local
-model. The adapter, package and daemon tests also run on Linux; the real
-Codex binary is not proven there. Other Codex versions, Windows, subagent tool
-calls, `write_stdin` continuations and hosted tools are not proven; Codex's
-hook contract changes between releases, so re-run the maintained proof before
-trusting a newer version. `reference/codex/supported-versions.json` lists the
-proven versions: the maintained real-binary tests refuse a Codex below its
-floor and, with `ISONAPSE_E2E_REQUIRE_CODEX=1`, any version it does not list
-unless `ISONAPSE_E2E_CODEX_QUALIFY` names that exact version for a
-qualification run.
+`reference/codex/` is for OpenAI codex-cli 0.159.0 or newer. It is proven
+against the real daemon, Hook and packages, one process per event, in
+Profile, Normal and Enforce, on macOS and Linux, and with the real
+`codex exec` binary against a scripted local model: codex-cli 0.164.0 on
+macOS arm64 and Linux x86_64. Not proven: Windows, subagent tool
+calls, `write_stdin` continuations and hosted tools.
+Codex's hook contract changes between releases, so
+`reference/codex/supported-versions.json` names the floor and the versions the
+maintained real-binary tests qualified. Those tests fail on a Codex below the
+floor and run on any other version, labelled `qualified` or `unqualified`; a
+weekly canary is to run them on Codex's newest stable, starting with the main
+release that carries it, and a version joins the list
+only once they pass on it.
 
 The digest covers pinned executable/script bytes and all capability flags.
 Changing the entrypoint or capabilities requires explicit `register --replace`
@@ -190,9 +212,9 @@ from that host since; see `INTEGRATION.md`. `host-profile evidence <name>
 --definition <path> --activity <path>` declares further files to compare
 (`--clear` removes them). Like registration it asks for OS authentication and
 needs a running control plane, which writes the owner-only declaration under
-the data directory. Self-protection refuses an agent's change through that
-command, run directly, through a wrapper or as a shell's script argument, but
-not one piped into a shell, which still asks for OS authentication. A process
+the data directory. Self-protection refuses an agent's direct change through
+that command; it is a best-effort check of direct tool arguments. A change it
+does not refuse still asks for OS authentication. A process
 running as you can also replace the declaration file itself: a symbolic
 link, or anything other than a regular file, in its place shows as a warning
 with `--clear` as the fix. A declaration with more than one hard link (`ln -f`,
@@ -206,7 +228,9 @@ does not attest imported modules, plugins or already loaded code. The operator
 must control and review the whole runtime installation. File pins and process
 identity do not isolate malicious code running as the installation owner.
 
-To add a host, open a public feature request containing:
+To add a host, use the public
+[Host adapter or profile form](https://github.com/Isonapse/isonapse-public/issues/new?template=host-adapter.yml)
+with:
 
 - upstream host/project and version range;
 - stable session and tool-call identity sources;

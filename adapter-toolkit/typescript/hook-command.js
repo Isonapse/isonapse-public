@@ -9,7 +9,7 @@
 // wire format: the host adapter turns the outcome into its own response and
 // remains responsible for answering EVERY path explicitly when the host fails
 // open on a silent or crashed hook.
-import {MAX_BYTES, Refused, Unavailable, decodeHostEvent, deliver, execute, snapshot} from "./index.js";
+import {MAX_BYTES, Refused, Unavailable, decodeHostEvent, deliver, execute, snapshot, stringifyJson} from "./index.js";
 
 /** Canonical hook-command events and the Protocol v1 boundary each one uses. */
 export const HOOK_COMMAND_EVENTS = Object.freeze({
@@ -23,8 +23,9 @@ export const HOOK_COMMAND_EVENTS = Object.freeze({
 // expansion or transcript fields into a tool-call request.
 const FORWARDED = Object.freeze(["session_id","cwd","hook_event_name","tool_use_id","tool_name","tool_input","tool_response","agent_id","agent_type"]);
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
-const canonical = value => JSON.stringify(value, (_key, item) =>
-  object(item) ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
+const ordered = value => Array.isArray(value) ? value.map(ordered)
+  : object(value) ? Object.fromEntries(Object.keys(value).sort().map(key => [key, ordered(value[key])])) : value;
+const canonical = value => stringifyJson(ordered(value));
 
 /** Read one bounded host event from a byte stream (stdin by default). */
 export async function readHostEvent(stream = process.stdin, {maxBytes = MAX_BYTES} = {}) {

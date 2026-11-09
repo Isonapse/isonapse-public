@@ -23,7 +23,8 @@ import tempfile
 
 
 def run(argv, *, cwd, env=None):
-    return subprocess.run(argv, cwd=cwd, env=env, check=True, timeout=180,
+    # Bounds a whole package suite, which takes minutes on a loaded host.
+    return subprocess.run(argv, cwd=cwd, env=env, check=True, timeout=600,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 
@@ -60,6 +61,10 @@ def verify(language, root):
         source = work / "source"
         shutil.copytree(root / language, source, ignore=shutil.ignore_patterns(
             "build", "dist", "*.egg-info", "__pycache__", "node_modules", "*.tgz"))
+        # Shared raw-number vectors and the maintained Codex renderer are
+        # consumed by the copied tests, also when testing installed packages.
+        shutil.copytree(root / "conformance/vectors", work / "conformance/vectors")
+        shutil.copytree(root / "reference/codex", work / "reference/codex")
         environment = os.environ.copy()
         for key in ["PYTHONPATH", "PYTHONHOME", "NODE_OPTIONS", "ISONAPSE_ADK_TEST_PACKAGE"]:
             environment.pop(key, None)

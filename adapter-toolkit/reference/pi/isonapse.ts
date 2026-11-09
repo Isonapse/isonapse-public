@@ -62,6 +62,7 @@ type Instruction = {
 	block?: boolean;
 	ask?: boolean;
 	reason?: string;
+	additionalContext?: string;
 	warning?: string;
 	input?: Record<string, unknown>;
 	output?: unknown;
@@ -105,10 +106,11 @@ function validatedInstruction(event: string, value: unknown, processFailed: bool
 			: undefined;
 	}
 	if (value.warning !== undefined && (typeof value.warning !== "string" || value.warning.length === 0)) return undefined;
+	if (value.additionalContext !== undefined && (event !== "tool_call" || typeof value.additionalContext !== "string" || value.additionalContext.trim().length === 0 || Buffer.byteLength(value.additionalContext) > 64 * 1024)) return undefined;
 
 	switch (event) {
 		case "tool_call": {
-			if (!hasExactKeys(value, ["block"], ["ask", "reason", "warning", "input"])) return undefined;
+			if (!hasExactKeys(value, ["block"], ["ask", "reason", "warning", "input", "additionalContext"])) return undefined;
 			if (value.input !== undefined && !plainObject(value.input)) return undefined;
 			if (value.ask === undefined) {
 				return value.reason === undefined ? (value as Instruction) : undefined;
@@ -367,6 +369,16 @@ export default function (pi: ExtensionAPI) {
 					return { block: true, reason: "isonapse: pi confirmation failed; action was not approved" };
 				}
 				if (!approved) return { block: true, reason: d.reason || "Isonapse review was declined" };
+			}
+			// Successful Hook context is distinct from operator-only warnings.
+			// Omit triggerTurn: Pi steers an active turn and appends when idle,
+			// without starting a turn. Explicit false would defer until turn end.
+			if (d.additionalContext) {
+				try {
+					pi.sendMessage({ customType: "isonapse-policy-context", content: d.additionalContext, display: true }, { deliverAs: "steer" });
+				} catch {
+					showError(ctx, "isonapse: agent context could not be delivered; consult hook status for policy load diagnostics");
+				}
 			}
 			// In place, on the object pi is about to execute. Replacement, not
 			// merge: a key the effective input dropped must not survive.

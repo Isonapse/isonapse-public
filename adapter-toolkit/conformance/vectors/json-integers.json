@@ -1,0 +1,19 @@
+{
+  "description": "Raw JSON values shared by both ADKs. Values are strings so a test loader cannot round their numbers.",
+  "accepted": [
+    {"name":"safe-boundary","input":"{\"account_id\":9007199254740991}","effective":null,"kind":"proceed"},
+    {"name":"first-bigint","input":"{\"account_id\":9007199254740992}","effective":null,"kind":"proceed"},
+    {"name":"odd-integer","input":"{\"account_id\":9007199254740993}","effective":null,"kind":"proceed"},
+    {"name":"signed-minimum","input":"{\"account_id\":-9223372036854775808}","effective":"{\"account_id\":-9223372036854775808}","kind":"proceed"},
+    {"name":"unsigned-maximum","input":"{\"account_id\":18446744073709551615}","effective":"{\"account_id\":18446744073709551615}","kind":"proceed"},
+    {"name":"rewrite-other-field","input":"{\"channel_id\":1234567890123456789,\"text\":\"original\"}","effective":"{\"channel_id\":1234567890123456789,\"text\":\"changed\"}","kind":"rewrite"},
+    {"name":"rewrite-only-integer","input":"{\"account_id\":9007199254740993}","effective":"{\"account_id\":9007199254740992}","kind":"rewrite"},
+    {"name":"nested-integers","input":"{\"items\":[{\"account_id\":9007199254740993},-9007199254740993],\"text\":\"9007199254740993\"}","effective":"{\"items\":[{\"account_id\":9007199254740995},-9007199254740993],\"text\":\"9007199254740993\"}","kind":"rewrite"},
+    {"name":"ordinary-controls","input":"{\"account_id\":42,\"fraction\":1.5,\"text\":\"18446744073709551616\"}","effective":null,"kind":"proceed"}
+  ],
+  "refused": [
+    {"name":"above-u64","value":"18446744073709551616"},
+    {"name":"below-i64","value":"-9223372036854775809"},
+    {"name":"overflow-number","value":"1e400"}
+  ]
+}

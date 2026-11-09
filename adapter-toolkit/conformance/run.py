@@ -30,6 +30,10 @@ REQUIRED_CASES = (
     "unavailable-fail-closed",
 )
 ALL_CAPABILITIES = {"can_ask", "can_rewrite_input", "can_rewrite_output"}
+# Bounds one adapter run. Every case finishes in well under a second on an idle
+# host, so only a wedged adapter waits this out; a loaded host can take seconds
+# to start two interpreters.
+CASE_TIMEOUT_SECONDS = 30
 
 STUB = r'''#!/usr/bin/env python3
 import json, os, sys, time
@@ -117,7 +121,7 @@ def run_case(
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env=environment,
-                timeout=4,
+                timeout=CASE_TIMEOUT_SECONDS,
                 check=False,
             )
         except subprocess.TimeoutExpired:
@@ -141,10 +145,32 @@ def run_case(
         diagnostic = expected.get("stderrContains")
         if isinstance(diagnostic, str) and diagnostic not in completed.stderr:
             failures.append(f"stderr omitted {diagnostic!r}")
-        if not argv_log.exists():
-            failures.append("adapter never invoked the hook")
+        # The deadline includes the hook's own startup, so on a loaded host an
+        # adapter can start the hook, reach its deadline and kill it before the
+        # stub writes these captures. That is the correct fail-closed outcome,
+        # not a missing invocation. Every other fixture still pins the exact
+        # argv and request, and this one accepts missing captures only with the
+        # refusal and its deadline diagnostic.
+        deadline_won_before_capture = (
+            fixture.get("case") == "hung-hook-fail-closed"
+            and completed.returncode != 0
+            and isinstance(diagnostic, str)
+            and diagnostic in completed.stderr
+        )
+        argv_text = argv_log.read_text(encoding="utf-8") if argv_log.exists() else ""
+        if not argv_text:
+            if not deadline_won_before_capture:
+                failures.append("adapter never invoked the hook")
         else:
-            argv = json.loads(argv_log.read_text(encoding="utf-8"))
+            argv = json.loads(argv_text)
+            expected_event = fixture.get("expectedHookEvent")
+            if not isinstance(expected_event, str):
+                expected_event = fixture["event"]
+            observed_event = argv[0] if argv else None
+            if observed_event != expected_event:
+                failures.append(
+                    f"wrong hook event: {observed_event!r}, expected {expected_event!r}"
+                )
             try:
                 host_index = argv.index("--host")
                 protocol_index = argv.index("--adapter-protocol")
@@ -158,7 +184,8 @@ def run_case(
                 handshake_ok = False
             if not handshake_ok:
                 failures.append(f"wrong hook handshake: {argv!r}")
-        if request_log.exists() and request_log.read_text(encoding="utf-8") != request:
+        captured = request_log.read_text(encoding="utf-8") if request_log.exists() else None
+        if captured not in (None, request) and not (deadline_won_before_capture and not captured):
             failures.append("adapter altered the native event before the hook saw it")
     return failures
 

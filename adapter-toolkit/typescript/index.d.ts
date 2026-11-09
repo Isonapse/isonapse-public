@@ -1,5 +1,5 @@
 export type Boundary = "pre" | "post" | "lifecycle";
-export type Json = null | boolean | number | string | Json[] | {[key:string]:Json};
+export type Json = null | boolean | number | bigint | string | Json[] | {[key:string]:Json};
 export interface Decision {
   protocolVersion: 1;
   decision: "allow" | "deny" | "ask" | "unavailable";
@@ -7,6 +7,8 @@ export interface Decision {
   effectiveInput?: Record<string,Json>;
   updatedOutput?: Json;
   operatorMessage?: string;
+  /** Non-empty UTF-8 agent context, at most 64 KiB; pre-action allow/ask only. */
+  additionalContext?: string;
   retryable?: boolean;
 }
 /** Why the Hook gave no decision. Absent for host-side input errors. */
@@ -21,7 +23,10 @@ export class Unavailable extends Error {
 }
 export class Refused extends Error {}
 export const MAX_BYTES: number;
+/** Integers outside Number's safe range decode to bigint; already-unsafe Numbers refuse. */
 export function snapshot(value:unknown):Json;
+/** Lossless bounded JSON encoding; use this instead of JSON.stringify on decoded values. */
+export function stringifyJson(value:unknown):string;
 export function decode(raw: Uint8Array | string, boundary: Boundary): Decision;
 /** Strictly decode one native host event (bounded, UTF-8, no duplicate keys, object). */
 export function decodeHostEvent(raw: Uint8Array | string): Record<string,Json>;

@@ -716,3 +716,17 @@ test("cancellation closes local pipes even when a descendant escapes its process
     if(pid) try {process.kill(pid,"SIGKILL");} catch {}
   }
 });
+
+test("optional bounded agent context remains separate from operator notes 1176",()=>{
+  const context = "User policy is not loaded";
+  const parsed = decode(wire("allow",{additionalContext:context,operatorMessage:"operator-only"}),"pre");
+  assert.equal(parsed.decision,"allow");
+  assert.equal(parsed.reason,undefined);
+  assert.equal(parsed.additionalContext,context);
+  assert.equal(parsed.operatorMessage,"operator-only");
+  assert.equal(decode(wire("allow",{additionalContext:"x".repeat(64*1024)}),"pre").decision,"allow");
+  for (const bad of [7,null,""," ","x".repeat(64*1024+1),"é".repeat(64*1024)]) assert.throws(()=>decode(wire("allow",{additionalContext:bad}),"pre"),Unavailable);
+  assert.throws(()=>decode(wire("allow",{additionalContext:context}),"post"),Unavailable);
+  assert.throws(()=>decode(wire("deny",{reason:"existing denial",additionalContext:context}),"pre"),Unavailable);
+  assert.throws(()=>decode(wire("unavailable",{reason:"offline",retryable:true,additionalContext:context}),"pre"),Unavailable);
+});

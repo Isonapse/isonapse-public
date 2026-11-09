@@ -1,9 +1,8 @@
 # OpenAI Codex CLI reference adapter
 
 > **Status — Public beta:** Ships in current Agent Hook release archives.
-> Proven only with the codex-cli versions in
-> `supported-versions.json` (today 0.155.1). Codex is a cooperative, fail-open
-> host.
+> For codex-cli 0.159.0 or newer; contract-tested on the versions
+> `supported-versions.json` qualifies (today 0.164.0, on macOS arm64 and Linux x86_64). Codex is a cooperative, fail-open host.
 
 `codex_hook.mjs` is a complete hook-command host adapter: Codex starts one
 fresh process per hook event, writes one JSON event to its stdin and reads the
@@ -13,56 +12,85 @@ decision from stdout and the exit status. The adapter uses the shipped
 
 ## Supported Codex versions
 
-`supported-versions.json` is the list of exact codex-cli versions on which a
-real Codex run has proven this adapter; the lowest one is the floor. Today
-that is 0.155.1 only. A version above the floor that is not on the list is
-unproven, not supported: Codex's hook contract changes between releases, and
-on a fail-open host a changed contract can mean ungoverned tool calls. The
-adapter does not check the Codex version at runtime. Check `codex --version`
-(it prints `codex-cli <version>`) before you rely on it, and after every Codex
-update.
+`supported-versions.json` holds the version policy:
+
+- **`floor`**: the oldest codex-cli this adapter is for, today 0.159.0. Older
+  versions are below the floor and unsupported.
+- **`qualified`**: the exact stable versions on which the maintained contract
+  tests passed with the real `codex exec` binary, today 0.164.0 (on macOS arm64 and Linux x86_64).
+- **Everything else at or above the floor is unqualified**: accepted, but no
+  real Codex run has proven this adapter on it. That includes a newer stable
+  and every build Codex's IDE extension or the ChatGPT desktop app bundles:
+  the VS Code extension 26.1021.22027 bundles `codex-cli 0.164.0-alpha.11.1`,
+  an alpha build. Codex's hook contract changes between releases, and on a
+  fail-open host a changed contract can mean ungoverned tool calls.
+
+A weekly real-Codex canary is to run the contract tests on Codex's newest
+stable on macOS and Linux x86_64, starting with the main release that carries
+it. A version joins `qualified` only after they pass on it. The adapter does not check the Codex version at runtime. Check `codex --version` (it prints
+`codex-cli <version>`) after every Codex update and compare it with the
+policy.
 
 ## Capability boundary (declare exactly this)
 
-| Isonapse capability | Codex 0.155.1 | Adapter behaviour |
+| Isonapse capability | Codex 0.164.0 | Adapter behaviour |
 | --- | --- | --- |
 | Pre-action refusal | yes | JSON `permissionDecision:"deny"` with a non-empty reason; every failure path answers explicitly |
 | Input replacement | yes for `Bash` (`command`), `apply_patch` (patch text) and MCP tools (whole argument object) | `--input-replacement`; a replacement the host cannot apply exactly is a deny |
 | Approval (`ask`) | **no**: Codex parses `ask` but does not support it and lets the tool run | never declared; an `ask` is a deny |
 | Output replacement | **no exact replacement**: PostToolUse can only withhold a result | never declared; any required replacement or refusal is `decision:"block"` |
-| Prompt boundary | not wired | not declared |
-| Lifecycle | SessionStart, SessionEnd (advisory, 1-3 s budget) | acknowledged; cannot block |
+| Prompt boundary | yes: UserPromptSubmit can block a prompt (`decision:"block"`), not rewrite it | `--prompt-boundary`; a Hook deny is a block, see "Prompt checks" below |
+| Codex's own permission requests | PermissionRequest: allow or deny an escalation Codex would otherwise ask you (or its reviewer) to approve | always denied, never allowed, never left to Codex's own prompt; see "Codex's own permission requests" below |
+| Lifecycle | SessionStart (60 s budget), SessionEnd (3 s budget), both advisory | acknowledged; cannot block |
 
-Register the profile with `--input-replacement` only. Codex keeps the raw
-tool result when a PostToolUse hook withholds it; the model sees the block
-reason instead. A withheld result does not undo the side effect.
+The adapter preserves JSON integer arguments and exact input replacements,
+including integers outside JavaScript's safe-number range. It uses the ADK's
+lossless serializer for Codex's answer. A value outside the Hook's exact JSON
+integer range is refused; it is never rounded and allowed.
+
+Register the profile with `--input-replacement --prompt-boundary`. Codex
+keeps the raw tool result when a PostToolUse hook withholds it; the model sees
+the block reason instead. A withheld result does not undo the side effect.
 
 **Codex is a cooperative, fail-open host.** A hook that crashes, times out,
 prints invalid JSON, answers `ask`, answers `allow` without `updatedInput`, or
-cannot be spawned (missing Node, wrong path) lets the tool run. The adapter
-converts every failure it can see into an explicit deny (exit 2 with a
-non-empty stderr from its outermost handler), but it cannot help if it never
-starts. Its own deadlines stay below the template's 60 s timeouts so that it,
-not Codex, answers on a hung daemon: one 50 s exchange for a tool event, and
-two 25 s exchanges (version probe, then decision) for SessionStart.
+cannot be spawned (missing Node, wrong path) lets the tool run, and a
+PermissionRequest hook that gives no answer leaves the request to Codex's own
+approval prompt. The adapter converts every failure it can see into an
+explicit answer (exit 2 with a non-empty stderr from its outermost handler,
+which Codex reads as a deny, a block or a withheld result), but it cannot help
+if it never starts. Its own deadlines stay below the template's 60 s timeouts
+so that it, not Codex, answers on a hung daemon: one 50 s exchange for a
+prompt, tool or permission event, and two 25 s exchanges (version probe, then
+decision) for SessionStart.
 
 A hook definition Codex has not been told to trust is silently skipped, which
 means an ungoverned Codex. A maintained test shows it: the real `codex exec`
 runs this `hooks.json` without persisted trust and without the bypass flag,
 every scripted command runs, and the daemon writes zero receipts. That test
-needs a real codex binary, so it does not run in every automated release
-check. Codex keys its trust on the definition, not on the files its command
+needs a real codex binary, so it is not part of every automated release
+check; the real-Codex canary runs it. Codex keys its trust on the definition, not
+on the files its command
 reads. With codex-cli 0.155.1, editing a trusted definition returned it to the
 untrusted state, and changing only the pin file the command names kept it
 trusted (a recorded run). Neither is a maintained test. Read the Hook pin from
 the pin file (below), keep the interpreter and adapter paths stable, and
 re-trust after every edit of the definition.
 
+Isonapse's direct-write self-protection covers Codex home/project configuration,
+hooks and rules, registered adapter directories and their adjacent dependencies,
+and supported shell startup files, including an absolute `ZDOTDIR`. Make operator
+changes outside the governed session. `hook status` and `hook doctor` show the
+resolved paths in their own environment; the quiet-host warning includes bounded
+file-time watches of configuration/startup files and nested adapter dependencies.
+This is a heuristic without a stored dependency baseline. It cannot establish that
+Codex loaded a hook, or undo shell state established before governance.
+
 ## Prerequisites
 
 - A working Agent Hook: `isonapse hook status` is healthy, on a release that
   ships the adapter toolkit and `isonapse hook adk-pin`.
-- A supported codex-cli (see above).
+- codex-cli 0.159.0 or newer, ideally a qualified version (see above).
 - Node.js 22 or newer at a canonical path that only you or root can change: a
   non-symlink regular file owned by you or root and not group- or
   world-writable, whose parent directories are each owned by you or root and
@@ -73,6 +101,13 @@ re-trust after every edit of the definition.
   fail it.
 
 ## Install
+
+On a machine with Docker, you usually do not need these steps: `isonapse setup`,
+or the dashboard's Hosts page, adds Codex as one plan you approve in your
+terminal. That plan installs and registers this adapter (prepared by
+`isonapse hook codex-adapter`), trusts its hooks and sets
+`approvals_reviewer = "user"`. The steps below are the manual path, for a
+machine without the dashboard.
 
 Run every step from a normal operator terminal, not from inside Codex or
 Claude Code.
@@ -99,7 +134,7 @@ TOOLKIT="$(brew --prefix)/share/isonapse/isonapse-adapter-toolkit.tar.gz"   # in
 isonapse hook host-profile create codex \
   --executable /absolute/path/to/node \
   --script "$HOME/isonapse-codex/codex_hook.mjs" \
-  --input-replacement > codex-profile.json
+  --input-replacement --prompt-boundary > codex-profile.json
 isonapse hook host-profile validate codex-profile.json
 isonapse hook host-profile register codex-profile.json   # OS authentication
 isonapse hook restart
@@ -147,7 +182,7 @@ The hook definition does not change: ADK hosts read the new pin on their next ev
    SHA-256 pin are different checks; never substitute one for the other.
 
 4. Copy `isonapse-adapter-toolkit/reference/codex/hooks.json` to
-   `~/.codex/hooks.json` (merge its four entries if that file exists) and
+   `~/.codex/hooks.json` (merge its six entries if that file exists) and
    replace the placeholders:
    - `__NODE__`: the absolute interpreter path you registered;
    - `__ADAPTER__`: `$HOME/isonapse-codex/codex_hook.mjs`, spelled out;
@@ -160,7 +195,9 @@ The hook definition does not change: ADK hosts read the new pin on their next ev
      cause;
    - `__HOST_ID__`: the full registered id.
 
-   Keep the quotes: Codex runs the command through `$SHELL -lc`. Codex has no
+   Keep the quotes: qualified Codex normally runs hook commands through its
+   resolved local shell with `-c`; its fallback launch uses `$SHELL -lc`. The
+   shell's applicable startup files run before the adapter. Codex has no
    per-hook environment setting; operator settings travel in the command
    string. Give the adapter exactly one pin source: a command with both
    `--hook-sha256` and `--hook-sha256-file`, or neither, exits 2 with
@@ -172,14 +209,24 @@ The hook definition does not change: ADK hosts read the new pin on their next ev
    the definition, and Codex runs without Isonapse from that edit until you
    re-trust it.
 
-5. Enable Codex hooks in `~/.codex/config.toml`:
+5. Enable Codex hooks and pin Codex's approval reviewer to you in
+   `~/.codex/config.toml` (put `approvals_reviewer` above any table):
 
 ```toml
+approvals_reviewer = "user"
+
 [features]
 hooks = true
 ```
 
-6. Start `codex`, run `/hooks`, review and trust all four definitions.
+   The adapter denies every one of Codex's own permission requests. If it
+   ever gives no answer (it never started, or it timed out), Codex asks its
+   approvals reviewer; `"user"` makes that you, never Codex's reviewer
+   model. A root-written Codex policy (`/etc/codex/requirements.toml`) can
+   enforce the same with `allowed_approvals_reviewers = ["user"]`; Isonapse
+   does not write that file today.
+
+6. Start `codex`, run `/hooks`, review and trust all six definitions.
 7. Make one harmless call. In Normal and Enforce mode the first action is the
    cold-start deny (see below); the retry proceeds. Then run
    `isonapse hook report --host adk-codex-…` and `isonapse hook witness verify`.
@@ -187,18 +234,20 @@ hooks = true
 ## After an Isonapse upgrade
 
 Every Isonapse release ships a new Hook binary, so its SHA-256 changes. With
-the pin file:
+the pin file, `isonapse update` rewrites the pin for you. By hand:
 
 ```sh
-brew upgrade isonapse             # or isonapse-beta / isonapse-alpha, or re-run install.sh
+brew upgrade isonapse             # or re-run install.sh
 isonapse hook restart
 isonapse hook adk-pin
 ```
 
 **Until `adk-pin` has run, Codex is blocked, not ungoverned.** The ADK refuses
 every event with the `pin mismatch` cause, whose text names
-`isonapse hook adk-pin`; the adapter denies every tool call and withholds
-every result, and SessionStart and SessionEnd only log the cause.
+`isonapse hook adk-pin`; the adapter blocks every prompt, denies every tool
+call and every permission request and withholds every result, and
+SessionStart and SessionEnd only log the cause. `codex exec` shows nothing
+for a blocked prompt: the turn ends without a model request or a message.
 The hook definition does not change, so you do not re-trust it. That Codex
 keeps trusting a definition when only the pin file changes was a recorded run
 with codex-cli 0.155.1, not a maintained test. Make one harmless call and
@@ -223,9 +272,9 @@ cmp -s ~/isonapse-codex/codex_hook.mjs ~/isonapse-codex/isonapse-adapter-toolkit
    `register --replace codex-profile.json`, and restart. The adapter's bytes
    are part of the host id, so `host-profile list` then shows a new
    `adk-codex-…` id.
-2. In all four entries of `~/.codex/hooks.json`, change only `--host` to the
+2. In all six entries of `~/.codex/hooks.json`, change only `--host` to the
    new id.
-3. Start `codex` and run `/hooks` **before any prompt**, and re-trust the four
+3. Start `codex` and run `/hooks` **before any prompt**, and re-trust the six
    definitions. Never run `codex exec` first.
 4. Confirm with `isonapse hook report --host …` that new receipts appear.
 
@@ -248,11 +297,25 @@ one Codex cannot read, and a symbolic link counts by its own times as well as
 its target's. It is a heuristic, not
 a guarantee: confirm new receipts yourself. Changing the Node
 interpreter likewise needs `host-profile register --replace`, a restart, the
-new host id in all four entries and a re-trust.
+new host id in all six entries and a re-trust.
 
 Never extract the toolkit over the registered `codex_hook.mjs`: the
 registration records that file's identity, and until you re-register the
 daemon refuses the adapter, which then answers every event with a deny.
+
+**Moving from the four-entry adapter.** The adapter that answers Codex's own
+permission requests and checks prompts is registered with one more flag and
+needs two more entries. In step 1 above, also repeat step 2's `create` with
+`--input-replacement --prompt-boundary` before `register --replace`: the flag
+is part of the host id. Then add the `UserPromptSubmit` and
+`PermissionRequest` entries from the new `reference/codex/hooks.json` (with the
+same command as the other four), put the new id in all six entries, add
+`approvals_reviewer = "user"` to `~/.codex/config.toml` (install step 5) and
+re-trust all six definitions before any prompt. Until then the old entries
+keep working and the new events are not answered: a prompt goes unchecked and
+a permission request goes to Codex's own prompt. Six entries with a profile
+created without `--prompt-boundary` block every prompt with
+`Reason [prompt-boundary-undeclared]` until you re-register with the flag.
 
 ## Moving from an inline pin
 
@@ -264,9 +327,9 @@ release's adapter and package (ADK 1.1.0 or later): an older adapter rejects
 1. Re-run the step 1 commands, including the `cp`, then repeat step 2 with
    `register --replace codex-profile.json` and restart. Copy the new host id.
 2. Run `isonapse hook adk-pin`.
-3. In all four entries, replace `--hook-sha256 '<pin>'` with
+3. In all six entries, replace `--hook-sha256 '<pin>'` with
    `--hook-sha256-file '<pin file>'` and set `--host` to the new id.
-4. Start `codex`, run `/hooks` before any prompt, and re-trust the four
+4. Start `codex`, run `/hooks` before any prompt, and re-trust the six
    definitions.
 5. Confirm with `isonapse hook report --host …` that new receipts appear.
 
@@ -275,14 +338,17 @@ only `isonapse hook restart` and `isonapse hook adk-pin`.
 
 ## Uninstall
 
-Remove the four `hooks.json` entries (or disable them in `/hooks`), then
+Remove the six `hooks.json` entries (or disable them in `/hooks`), then
 `isonapse hook host-profile remove codex`, `isonapse hook restart`, and
 remove `~/isonapse-codex`. The pin file stays in `~/.isonapse/adk/` for any
 other ADK host; delete that directory if none uses it.
 
 ## What the model sees
 
-- Plain allow: nothing (empty stdout). Codex runs the exact original input.
+- Plain allow: Codex runs the exact original input. Without context or an
+  operator message, stdout is empty; optional agent context is delivered as
+  `additionalContext`, including on an authorized rewrite. Operator messages
+  remain in `systemMessage`.
 - Rewrite: `permissionDecision:"allow"` with `updatedInput`; Codex runs the
   exact replacement and reports it as the applied input on PostToolUse.
 - Deny: `Command blocked by PreToolUse hook: Isonapse: <reason>…
@@ -290,11 +356,17 @@ other ADK host; delete that directory if none uses it.
   text (its `Evidence:` line names the witnessed receipt when one was written);
   never parse it.
 - Withheld result: the block reason replaces the tool output.
+- Denied permission request: Codex reports the escalation as rejected with
+  `Isonapse: Codex's permission request for <tool> is denied: <reason>`; see
+  "Codex's own permission requests" below.
+- Blocked prompt: the model receives nothing; see
+  "Prompt checks" below.
 
 When the ADK cannot use the Hook at all, the adapter denies the tool call
-(PreToolUse) or withholds its result (PostToolUse), and the reason names the
-cause and no path. `P` stands for `Installed Hook identity could not be
-verified`:
+(PreToolUse) or the permission request (PermissionRequest), withholds the
+result (PostToolUse), or blocks the prompt (UserPromptSubmit), and the reason
+names the cause and no path. `P` stands for
+`Installed Hook identity could not be verified`:
 
 | Cause | Reason text |
 | --- | --- |
@@ -309,8 +381,11 @@ verified`:
 | invalid configuration | `P (invalid configuration): the Hook path must be absolute and the pin must be 64 lowercase hexadecimal characters.` |
 | transport or protocol | `Verified Hook could not be started`, `Hook transport failed, …`, `Hook transport budget invalid or operation cancelled`, `Invalid or incompatible Hook Protocol v1 response`, or `Installed Hook version is incompatible with ADK v1` |
 
-On PreToolUse and PostToolUse each of these refusals also travels as
-`systemMessage`, with the text `Isonapse: <reason>`. SessionStart and
+On PreToolUse, PermissionRequest and PostToolUse each of these refusals also
+travels as `systemMessage`, with the text `Isonapse: <reason>`. On
+UserPromptSubmit the block reason is
+`Isonapse: <reason>. The prompt was not checked, so it was not sent.`, and it
+also goes to the adapter's stderr. SessionStart and
 SessionEnd cannot block, so for them the reason goes to the adapter's stderr.
 A Hook operator message goes to the adapter's stderr. On a deny, rewrite or
 block answer that has none of the causes above, it also travels as
@@ -318,46 +393,127 @@ block answer that has none of the causes above, it also travels as
 Codex shows `systemMessage` or the hook's stderr to you is not proven; the
 model sees the deny or block reason.
 
-**First action of every session.** In Normal and Enforce mode the coherence
-gate cold-starts each session with a durable DEFER. Codex cannot ask a human,
-so the daemon converts that DEFER into a witnessed DENY whose receipt names
-`can_ask=false`; the same happens for the first action after an Isonapse
-restart. Only when the Hook itself returned a `deny` decision for a
-PreToolUse event does the adapter append that a first-action denial is the cold-start check and
-that retrying the same action once proceeds when policy permits it, while a
-policy denial stays denied. The note is not added to identity, transport or
-protocol refusals, an `ask` without approval, an `unavailable` decision, a
-withheld result or a tool mapping refusal: retrying those does not help.
-Profile mode does not cold-start. An explicit policy `DEFER` is likewise a
-witnessed DENY for this host.
+**First action of every session.** In Enforce mode the coherence gate
+cold-starts each session with a durable DEFER. Codex cannot ask a human, so
+the daemon converts that DEFER into a witnessed DENY whose receipt names
+`can_ask=false` and the cold start; the same happens for the first action
+after an Isonapse restart. Only when the Hook itself returned a `deny`
+decision for a PreToolUse event, with its durable gate receipt and the reason
+class `learned-cold-start`, does the adapter append that this was the
+cold-start check and that retrying the same action once proceeds when policy
+permits it. A policy denial, including a folder rule's (`file-rule`), stays
+denied and carries no note. Nor do identity, transport or protocol refusals,
+an `ask` without approval, an `unavailable` decision, a withheld result or a
+tool mapping refusal: retrying those does not help. Profile and Normal mode
+do not cold-start. An explicit policy `DEFER` is likewise a
+witnessed DENY for this host. A permission request carries no retry note:
+asking again is denied the same way.
 
 **Repeated SessionStart.** Codex fires SessionStart again for `resume`,
-`clear` and `compact` with the same session id. The Hook returns allow with
-an operator warning (`failed to bind session identity`) and writes no receipt;
-the live session keeps working with its original identity.
+`clear` and `compact` with the same session id. The Hook proves the
+session's identity with the session key it keeps, and Isonapse renews the
+identity in place, writing one identity receipt. If the Hook no longer holds
+that key (removed or replaced, or a different HOME), the start is refused
+with the operator warning `failed to bind session identity` and nothing is
+minted, also after a restart of the Isonapse control plane; start a new
+thread. The proof is only as strong as the protection of that key file.
 
-**A session identity lasts 8 hours.** The identity the first SessionStart
-establishes expires 8 hours later. While Isonapse keeps running the expiry is
-final for a hook-command host: resuming the same thread keeps the expired
-identity. From then on every tool call in that thread is refused before
-policy runs, in every gate mode including Profile, with
-`Reason [session-identity-expired]` and no receipt. Start a new thread; it
-gets a fresh identity. A restart of the Isonapse control plane followed by
-the thread's next SessionStart does give the same thread a new identity; that
-is how the current design behaves, not a supported recovery.
+**A session identity is renewed every 8 hours.** The identity expires 8 hours
+after the thread's last SessionStart. From then on every tool call in that
+thread is refused before policy runs, in every gate mode including Profile,
+with `Reason [session-identity-expired]` and no receipt, until you resume the
+thread, which renews it.
+
+## Codex's own permission requests
+
+Codex asks for approval when an action needs more than its sandbox allows: a
+command to run outside the sandbox, network access, input to a command that
+runs with elevated permissions, a file change outside the workspace, an MCP
+tool call that needs approval, or wider permissions (`request_permissions`).
+It first sends each such request to the PermissionRequest hook, and a hook's
+allow or deny is final: it skips both you and Codex's own reviewer.
+
+The adapter denies every one, whatever the request:
+
+- It never answers allow, so nothing Isonapse says approves an escalation.
+- It never stays silent, so no request falls through to Codex's own approval
+  prompt, whose answer Isonapse would not record.
+- It asks the Hook first, under the reserved tool name `HostPermissionRequest`
+  with Codex's tool name and input. The control plane denies every such
+  request in every gate mode, whatever the policy says, and writes one
+  witnessed DENY receipt for capability `tool:HostPermissionRequest` with the
+  reason `host permission request denied: …`. The model sees
+  `Reason [host-permission-request]`, and the `Evidence:` line names the
+  receipt.
+- When the Hook cannot be used or the control plane is unreachable, the
+  request is still denied, naming the cause, and no receipt is written.
+
+What this means:
+
+- An action that needs to leave the sandbox does not run. Do the work inside
+  the sandbox, or change Codex's sandbox configuration yourself.
+- The escalated action's own PreToolUse decision comes first and is receipted
+  on its own, often as a PERMIT, because that hook sees only the command and
+  not the escalation. The PermissionRequest DENY follows, and the action never
+  runs.
+- `codex exec` never asks: it runs with approvals set to `never`, so Codex
+  itself refuses an escalation there and no PermissionRequest fires.
+- Codex 0.164.0 asks about network access only when an administrator has set
+  a managed network requirement in `/etc/codex/requirements.toml`; without
+  one it refuses a host outside its allowlist itself.
+- If the adapter never starts or Codex's hook timeout expires, Codex gets no
+  answer and asks its approvals reviewer. Install step 5 sets
+  `approvals_reviewer = "user"`, so that is you, never a reviewer model; that
+  answer is not recorded by Isonapse.
+
+## Prompt checks
+
+With `--prompt-boundary`, Codex sends every prompt you submit to the Hook
+before the model sees it (UserPromptSubmit):
+
+- With `pii_action = "deny_on_ingress"`, a prompt that carries PII is
+  blocked: Codex sends nothing to the model, and the reason is
+  `Reason [pii-ingress]`. A blocked prompt is not a gate decision and writes
+  no authorization receipt. `codex exec` shows nothing for it: the turn ends
+  without a model request or a message (codex-cli 0.164.0).
+- Otherwise the prompt proceeds unchanged, because Codex cannot rewrite a
+  prompt. A PII warning reaches you as `systemMessage`.
+- A Codex prompt feeds only this PII check and, when session-purpose capture
+  is enabled, the session's purpose record. Unlike a Claude Code or pi prompt,
+  it is not registered as the session's stated intent, so intent-deviation
+  detection does not compare Codex's later actions with it: Codex cannot ask,
+  and a deviation DEFER would reach it as a DENY. Isonapse decides this by
+  the host's declared ability to ask (the profile's `--approval`), not by its
+  name.
+- When the adapter gets no usable answer from the Hook (an identity,
+  transport or protocol failure, for example a pin mismatch before
+  `isonapse hook adk-pin`), the prompt is blocked and the reason names the
+  cause.
+- When the Hook runs but cannot check the prompt itself, because its control
+  plane is unreachable or its PII check fails, the Hook lets the prompt
+  proceed unchanged and the warning says it was not checked, as it does for
+  Claude Code. Every tool call is still refused while the control plane is
+  unreachable.
+
+Without `--prompt-boundary` the registered id does not accept prompts. If
+`~/.codex/hooks.json` still has the `UserPromptSubmit` entry, the Hook blocks
+every prompt, whatever it carries, with `Reason [prompt-boundary-undeclared]`,
+and no prompt reaches the model unchecked. Re-create the profile with
+`--input-replacement --prompt-boundary`, `register --replace`, restart, put
+the new id in all six entries and re-trust them.
 
 ## The ChatGPT desktop app
 
 The ChatGPT desktop app's Codex workspace reads the same `~/.codex/hooks.json`
 and `~/.codex/config.toml` as Codex CLI, so once these hooks are installed and
 trusted, they also run for tool calls made in the app. This is **unproven and
-unsupported**: the app bundles its own Codex build, which is not in
-`supported-versions.json`, and no maintained test drives the app. A tester
+unsupported**: the app bundles its own Codex build, which is unqualified (its
+version was not determined), and no maintained test drives the app. A tester
 using the app saw local tool calls (a web retrieval and an attachment read)
 blocked with `ISONAPSE ASK` and `Reason [preparation-refused]`, with no
-receipt. Use Codex CLI at a listed version. Removing the four entries from
-`~/.codex/hooks.json` also removes governance from Codex CLI, because both read
-the same file.
+receipt. Use Codex CLI, at a qualified version where you can. Removing the
+six entries from `~/.codex/hooks.json` also removes governance from Codex CLI,
+because both read the same file.
 
 ## When tool calls are refused with `preparation-refused`
 
@@ -365,7 +521,8 @@ the same file.
 checks that run before policy. Profile mode does not prevent them, and no
 receipt is written. Start with `isonapse hook doctor`: it counts recent
 refusals by class, lists each registered host profile with whether its
-interpreter and adapter still match the registration, and checks
+interpreter and adapter still match the registration and whether the running
+control plane has activated them, and checks
 `~/.codex/hooks.json` for host ids no profile has and for Claude-style
 entries, which leave Codex ungoverned (see the last rows of the table). The
 control plane log records each identity refusal made before
@@ -374,48 +531,87 @@ known host nor shaped like a registered id) and fixed reason
 (`Hook call refused before policy: …`). An expired identity is logged as
 `Hook call refused: the session's witnessed root SessionStart identity
 expired; …` with its host id, and a refused SessionStart as
-`Hook SessionStart refused; no new identity was bound: …`. A routine repeated
-SessionStart (a resume, clear or compact) keeps the session's live identity
-and is logged only at info level.
+`Hook SessionStart refused; no new identity was bound: …`. A repeated
+SessionStart (a resume, clear or compact) that proves the session's key
+renews the identity in place and is logged only at info level; one that
+cannot prove it is a refused SessionStart.
 
 | What you see | Cause | Fix |
 | --- | --- | --- |
-| Every call refused with `preparation-refused` saying the control plane did not recognize this caller as a governed host, after you changed the adapter, the interpreter or the toolkit | Identity drift: the registration pins the old interpreter or adapter bytes, and the host id changed with them. `hook doctor` reports that the profile's files do not match its registration, or a `hooks.json` host id that no profile has | `isonapse hook host-profile register --replace codex-profile.json`, `isonapse hook restart`, copy the new id from `isonapse hook host-profile list` into `--host` in all four entries, then re-trust them in `/hooks` before any prompt |
-| The same refusal while `hook doctor` reports that the files match their registration | The files were reinstalled since the control plane started (it checks the file generation it activated), or the entries' `--hook` path is not the configured `hook_binary_path` | Run `isonapse hook restart`; check `--hook` against `hook_binary_path` in `~/.isonapse/config.toml` |
-| Every call refused with `session-identity-expired` after a long thread | The session's identity lasts 8 hours, and resuming the thread while Isonapse keeps running does not renew it | Start a new thread |
-| Tool calls run with no Isonapse decision and no receipt, and `hook doctor` warns about entries that run the Hook directly | Claude-style entries (the Hook called without the adapter) copied into `~/.codex/hooks.json`. The Hook answers them with `ask`, which Codex runs, so those calls are not refused: they run without Isonapse (a fail-open state) | Replace them with the four entries from the toolkit's `reference/codex/hooks.json` and re-trust them |
-| Refusals only in the ChatGPT desktop app | The app runs the same hooks but is unproven and unsupported | Use Codex CLI at a listed version |
+| Every call refused with `preparation-refused` saying the control plane did not recognize this caller as a governed host, after you changed the adapter, the interpreter or the toolkit | Identity drift: the registration pins the old interpreter or adapter bytes, and the host id changed with them. `hook doctor` reports that the profile's files do not match its registration, or a `hooks.json` host id that no profile has | `isonapse hook host-profile register --replace codex-profile.json`, `isonapse hook restart`, copy the new id from `isonapse hook host-profile list` into `--host` in all six entries, then re-trust them in `/hooks` before any prompt |
+| The same refusal while `hook doctor` reports that the files match their registration | The files were reinstalled since the control plane started, which `hook doctor` reports under `Registered host activation`, or the entries' `--hook` path is not the configured `hook_binary_path` | Run `isonapse hook restart`; check `--hook` against `hook_binary_path` in `~/.isonapse/config.toml` |
+| Every call refused with `session-identity-expired` after a long thread | The session's identity expired after 8 hours; Codex renews it only at the thread's next SessionStart | Resume the thread; if the resume warns `failed to bind session identity` (the Hook no longer holds the session's key), start a new thread |
+| Tool calls run with no Isonapse decision and no receipt, and `hook doctor` warns about entries that run the Hook directly | Claude-style entries (the Hook called without the adapter) copied into `~/.codex/hooks.json`. The Hook answers them with `ask`, which Codex runs, so those calls are not refused: they run without Isonapse (a fail-open state) | Replace them with the six entries from the toolkit's `reference/codex/hooks.json` and re-trust them |
+| Refusals only in the ChatGPT desktop app | The app runs the same hooks but is unproven and unsupported | Use Codex CLI, at a qualified version where you can |
 
 ## Tool mapping
 
 - `Bash` (`exec_command`, unified exec) arrives as `{"command": …}` and is
   canonical; policy sees `tool:Bash:<boundary>`.
-- `apply_patch` arrives as `{"command": "<patch text>"}`. Exactly one
+- `apply_patch` arrives as `{"command": "<patch text>"}`. The adapter reads
+  the patch exactly as Codex's own parser does: a line ends only at a
+  newline, and a header counts after leading whitespace, which Codex trims
+  between files and inside Add and Delete File sections. Exactly one
   `*** Add File:` target becomes canonical `Write`, exactly one
   `*** Update File:` target becomes canonical `Edit`, each with the absolute
   `file_path` resolved against the turn cwd and the full patch text bound.
   Delete, Move, multi-target and malformed patches are denied: split the
-  patch. A rewritten patch is applied only when it still names the same file.
+  patch. So is a patch with a line that a looser reading takes for another
+  file header (an indented header inside an Update File section, or one after
+  a carriage return or a Unicode line separator), one that names an
+  environment, and one whose target starts with whitespace or holds a control
+  character or line separator. A rewritten patch is applied only when it
+  still names the same file under the same reading.
+- A patch run through the shell (`apply_patch <<'EOF' … EOF` in a `Bash`
+  command), which Codex applies itself, stays a `Bash` command, and Isonapse
+  reads it as a file writer: the files its patch names, read with the same
+  header rule, are checked by file rules and self-protection, and a patch it
+  cannot read (piped in, read from a file, built by an expansion, an unquoted
+  heredoc whose text the shell would expand, a heredoc followed by another
+  input redirection, or a header line read two ways) is refused by
+  self-protection in every gate mode and by a file rule in Normal and
+  Enforce. Codex's own `cd <folder> && apply_patch <<'EOF'` form is placed in
+  that folder by self-protection, but a configured file rule refuses it in
+  Normal and Enforce, because the file rule check does not follow the folder
+  change. Prefer the `apply_patch` tool.
 - `mcp__<server>__<tool>` passes through; a replacement replaces the whole
   argument object.
 - Other Codex tools pass through under their own name (`tool:<name>`); a
-  replacement for them is a deny.
+  replacement for them is a deny. `view_image` is one of them: it reaches
+  PreToolUse as `{"path": …}`, the path as the model wrote it (often relative
+  to the cwd), and a deny blocks it (0.164.0). Its native `path` is a read
+  subject for `tool:Read` / `cap:file-read` rules. An absolute path can be
+  checked; a relative read is refused in Normal and Enforce when a Read rule
+  is configured, because this hook cannot see the tool's working directory.
+  Profile records would-deny. Shell read operands use the same rules, and
+  opaque interpreter reads are refused conservatively while a Read rule is
+  configured. These checks predict visible input; host confinement is still
+  needed for the process's actual filesystem effects.
 
 ## Boundaries not covered
 
 - `write_stdin` continues an interactive command without a PreToolUse; deny
   bare interpreters and shells in policy if that matters to you.
-- Hosted tools (web search) and `PermissionRequest`, `Stop`, `Interrupt`,
-  compaction and subagent events are not wired. `stop` is not an event a
-  registered profile can send. Subagent tool calls (`agent_id` present) are
-  forwarded but were not exercised.
-- The hook sees only the command string: `workdir`, escalation flags and a
-  later hook's rewrite are invisible before the effect.
+- Hosted tools (web search) and `Stop`, `Interrupt`, compaction and subagent
+  events are not wired. `stop` is not an event a registered profile can send.
+  Subagent tool calls (`agent_id` present) are forwarded but were not
+  exercised.
+- PreToolUse sees only the command string: `workdir`, escalation flags and a
+  later hook's rewrite are invisible before the effect. An escalation is
+  refused at its PermissionRequest instead, which `codex exec` never sends.
+  So a relative path in a shell command, a shell-invoked `apply_patch`'s
+  files included, is placed against the session's folder, not the `workdir`
+  the command runs in: self-protection checks it there, and a file rule that
+  depends on where the file is refuses it.
+- An adapter that never starts, or a hook timeout, leaves a permission
+  request to Codex's own approval prompt and lets a prompt through unchecked.
 - PostToolUse fires for commands that exit non-zero (the result is bound and
   witnessed) but not when Codex itself failed to run the tool.
-- Nothing warns you when a registered Codex host stops being governed, for
-  example after an edit of its definitions left them untrusted (observed on
-  codex-cli 0.155.1, not a maintained test).
+- `hook status` and `hook doctor` warn heuristically when a registered
+  Codex host may have stopped being governed, including after its hook
+  definitions change. A host that runs no hooks leaves no other trace,
+  and invoking the registered adapter can clear the warning. Confirm
+  receipts after every change; the warning is not a guarantee.
 
 ## Proven
 
@@ -429,17 +625,29 @@ and is logged only at info level.
   `isonapse hook adk-pin` re-pins the Hook, governed receipts resume, and the
   hook definition stays byte-identical. This test does not use the real Codex
   binary.
-- **Real Codex, on macOS only.** The real `codex exec` binary (codex-cli
-  0.155.1) against a scripted local model server with zero credits: the agent
-  honoured a deny, ran an exactly rewritten command, never received a withheld
-  secret-bearing result, and its SessionEnd hook finished inside Codex's 3 s
-  budget. Two negatives run the same binary against the same `hooks.json`:
-  without persisted hook trust and without the bypass flag every scripted
-  command runs and the daemon writes no receipt; with `--ignore-user-config`
-  the definitions still load and the run is governed.
-- **Not proven:** the ChatGPT desktop app's Codex workspace, which runs the
-  same `~/.codex` hooks; the real Codex binary on Linux; hosted models; subagents;
+- **Real Codex.** The real `codex exec` binary against a scripted local model
+  server with zero credits: the agent honoured a deny, ran an exactly
+  rewritten command, never received a withheld secret-bearing result, and its
+  SessionEnd hook finished inside Codex's 3 s budget. Two negatives run the
+  same binary against the same `hooks.json`: without persisted hook trust and
+  without the bypass flag every scripted command runs and the daemon writes no
+  receipt; with `--ignore-user-config` the definitions still load and the run
+  is governed. Recorded runs: codex-cli 0.164.0 on macOS arm64 and Linux x86_64 with Codex's sandbox active (the qualified version), and the
+  same tests on the VS Code extension's bundled `0.164.0-alpha.11.1` build on
+  Linux arm64.
+- **Codex's own permission requests and the prompt veto, real Codex.** On
+  codex-cli 0.164.0 on macOS arm64 and Linux x86_64,
+  `codex app-server` with a client that
+  approves everything: a command outside the sandbox, a file change outside
+  the workspace and an MCP tool that needs approval are each denied with one
+  witnessed DENY, and no approval reaches the client. `codex exec` sends
+  nothing to the model for a prompt the Hook blocks. Network access, input to
+  an elevated session and wider permissions are proven with Codex's payload
+  shapes against the real daemon only.
+- **Not proven:** the ChatGPT desktop app's Codex
+  workspace, which runs the same `~/.codex` hooks; a hosted-model install on
+  macOS; subagents;
   receipts across an upgrade and re-pin with the real Codex binary; the
   un-trust of an edited definition and the kept trust of a changed pin file
-  (both observed on 0.155.1); Codex versions not listed in
-  `supported-versions.json`; and Windows, where the ADK has no transport.
+  (both observed on 0.155.1); unqualified Codex versions; and Windows, where
+  the ADK has no transport.

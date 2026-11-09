@@ -22,18 +22,7 @@ body:
     attributes:
       label: Version
       description: Output of `isonapse --version`
-      placeholder: isonapse 0.3.0-beta+main.abc1234
-    validations:
-      required: true
-  - type: dropdown
-    id: channel
-    attributes:
-      label: Channel
-      options:
-        - main (public beta)
-        - beta
-        - alpha
-      default: 0
+      placeholder: isonapse 0.3.0-beta+release.abc1234
     validations:
       required: true
   - type: input

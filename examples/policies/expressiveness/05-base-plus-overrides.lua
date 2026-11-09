@@ -22,7 +22,7 @@ local BASE = {
     ["cap:llm-invoke"] = { per_minute = 20 },
   },
   blocked_capabilities = {
-    ["agent:*"] = { "tool:Bash:sudo", "tool:Bash:dd" },
+    ["*"] = { "tool:Bash:sudo", "tool:Bash:dd" },
   },
   llm = {
     allowed_models = {

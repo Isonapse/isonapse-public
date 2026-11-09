@@ -39,11 +39,12 @@ and transparent wrappers.
 
 ## Public snapshot
 
-Every `main` release publishes this README and the 14 files listed below to
+Every `main` release publishes this README and the 15 files listed below to
 `Isonapse/isonapse-public/examples/policies/` as one machine-authored snapshot. The generated
 `.isonapse-source.json` beside them records the full source commit and each Git blob identity, so
-the public policy files remain byte-for-byte equal to this canonical tree. Alpha and beta do not
-mutate that public snapshot; edit examples here, never in the public repository.
+the public policy files remain byte-for-byte equal to this canonical tree. Only a `main` release
+changes that public snapshot. The published files are generated from the release's
+source; to customize a policy, edit your own local copy.
 
 ## Ladder A — `fields/` (coverage)
 
@@ -55,9 +56,10 @@ One rung per shipped policy field cluster, with cumulative complexity. Reading f
 | [`02-blocked-capabilities.lua`](fields/02-blocked-capabilities.lua) | `blocked_capabilities` — agent-pattern wildcards, exact denials. The deterministic floor. |
 | [`03-domain-rules.lua`](fields/03-domain-rules.lua) | `allowed_domains` + `blocked_domains` for HTTP egress; blocked beats allowed. |
 | [`04-rate-limits.lua`](fields/04-rate-limits.lua) | Per-capability sliding-window counters (minute / hour / day). |
-| [`05-action-rules.lua`](fields/05-action-rules.lua) | `actions` — PERMIT/DENY/DEFER/LEARNED, trust zones, PII allowlists, secret allowlists, secret injection. After policy/rate/coherence gating, PERMIT bypasses the later destructive veto; LEARNED routes an eligible non-catastrophic action through the quorum. |
-| [`06-file-patterns.lua`](fields/06-file-patterns.lua) | `blocked_file_patterns`, `hidden_file_patterns` (OverlayFS hides), `max_payload_size`. |
+| [`05-action-rules.lua`](fields/05-action-rules.lua) | `actions` — PERMIT/DENY/DEFER/LEARNED, trust zones, PII allowlists, secret allowlists, secret injection, and launcher approval with a verified local-program exception. After policy/rate/coherence gating, PERMIT bypasses the later destructive veto; LEARNED routes an eligible non-catastrophic action through the quorum. |
+| [`06-file-patterns.lua`](fields/06-file-patterns.lua) | `blocked_file_patterns` shapes (file names, path endings, folders, absolute paths), `hidden_file_patterns` (OverlayFS hides), `max_payload_size`. |
 | [`07-llm-and-coherence.lua`](fields/07-llm-and-coherence.lua) | `llm` budget + model allowlist; `coherence` envelopes with `direction` and `hard_cap`. |
+| [`08-folder-rules.lua`](fields/08-folder-rules.lua) | Folder rules for file tools, search roots/path globs, visible shell read operands/copy sources and projected writes. Indeterminate reads refuse in Normal/Enforce (Profile advises); opaque interpreter commands may also be refused. Host confinement covers actual effects. |
 
 ## Ladder B — `expressiveness/` (Lua-as-DSL)
 
@@ -66,7 +68,7 @@ One rung per Lua pattern unavailable in JSON. The point isn't field coverage —
 | File | Shows |
 |---|---|
 | [`01-shared-list.lua`](expressiveness/01-shared-list.lua) | One `local PROD_DBS = {...}` shared between `blocked_capabilities`, `blocked_domains`, and `blocked_file_patterns`. Single source of truth. |
-| [`02-loop-allowlist.lua`](expressiveness/02-loop-allowlist.lua) | A loop-generated allowlist: per-subcommand action rules from one list. Permits read-only git, lets the rest DEFER. |
+| [`02-loop-allowlist.lua`](expressiveness/02-loop-allowlist.lua) | A loop-generated allowlist for git status, log, diff and show; other subcommands keep the gate's remaining checks. |
 | [`03-helper-functions.lua`](expressiveness/03-helper-functions.lua) | Local helper functions (`permit`, `deny`, `local_permit`, `rate`) — declarative DSL in ~12 lines. |
 | [`04-data-driven.lua`](expressiveness/04-data-driven.lua) | A single `CAPS` data spec drives both `actions` and `coherence` in lockstep. Adding a capability is a one-row edit. |
 | [`05-base-plus-overrides.lua`](expressiveness/05-base-plus-overrides.lua) | `BASE` + `OVERRIDES` tables, deep-merged at load time. The org-baseline + per-team-override pattern. |
@@ -83,3 +85,8 @@ One rung per Lua pattern unavailable in JSON. The point isn't field coverage —
 
 Release validation loads every file through the real policy engine and rejects
 examples without paired regression coverage.
+
+All-agent capability blocks use `*`, which also covers `claude-code/<session>`
+Hook IDs. The shared-list example's database capability identifiers require a
+client that reports the target host; the Hook does not add that host to the
+capability of an ordinary Bash `psql` command.

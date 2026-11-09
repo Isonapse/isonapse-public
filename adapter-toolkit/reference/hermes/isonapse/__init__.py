@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import logging
+import os
 import subprocess
+import sys
 import threading
 import time
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 from ._adk_json import loads as strict_json_loads
@@ -19,12 +23,96 @@ ADAPTER_TIMEOUT_SECONDS = 55.0
 
 logger = logging.getLogger("isonapse.hermes")
 
+# The pinned host injects pre_llm_call context once at the next turn's setup.
+# This is observed decision context, not a claim that a later generation is
+# still unloaded. Bound sessions and bytes, never persist it across processes.
+_pending_agent_context: OrderedDict[str, str] = OrderedDict()
+_context_lock = threading.Lock()
+MAX_CONTEXT_SESSIONS = 64
+MAX_AGENT_CONTEXT_BYTES = 64 * 1024
+
+
+def _context_delivery_error() -> None:
+    try:
+        logger.error("isonapse: optional decision context could not be delivered")
+    except Exception:
+        pass
+
+
+def _clear_agent_context(session_id: str) -> None:
+    try:
+        with _context_lock:
+            _pending_agent_context.pop(session_id, None)
+    except Exception:
+        _context_delivery_error()
+
+
+def pre_llm_call(session_id: str = "", **_: Any) -> dict[str, str] | None:
+    if not isinstance(session_id, str) or not session_id:
+        return None
+    try:
+        with _context_lock:
+            context = _pending_agent_context.pop(session_id, None)
+        return {"context": "Previous governed tool decision context:\n" + context} if context else None
+    except Exception:
+        _context_delivery_error()
+        return None
+
 
 def _working_directory() -> str | None:
     try:
         return str(Path.cwd())
     except OSError:
         return None
+
+
+def _hermes_module(name: str) -> Any:
+    # Only inside the Hermes runtime, whose terminal tool is already loaded:
+    # never import a `tools` package Hermes did not load itself.
+    if "tools.terminal_tool" not in sys.modules:
+        return None
+    return importlib.import_module(name)
+
+
+def _tool_working_directory(tool_name: str, task_id: str) -> str | None:
+    """The folder Hermes v0.20.0 resolves this call's relative paths in (#1218).
+
+    `terminal` runs in its `workdir` when one is given (the Hook reads that from
+    the call), otherwise in the session's folder record, which Hermes updates
+    after each command, then in the task's registered folder and the configured
+    terminal folder (`tools/terminal_tool.py` `_resolve_command_cwd`). The file
+    tools resolve against `tools/file_tools.py` `_resolve_base_dir`. Only the
+    local backend runs here. Anything else, or any failure, is unknown (None):
+    the Hook then refuses a relative target of a protected-path check rather
+    than guess its folder. `cwd` stays Hermes's own process folder, where it
+    loads project plugins.
+    """
+    try:
+        terminal = _hermes_module("tools.terminal_tool")
+        if terminal is None:
+            return None
+        config = terminal._get_env_config()
+        if config.get("env_type") != "local":
+            return None
+        if tool_name == "terminal":
+            approval = _hermes_module("tools.approval")
+            key = approval.get_current_session_key(default="") or (task_id or "")
+            folder = terminal.get_session_cwd(key)
+            if not folder:
+                overrides = terminal.resolve_task_overrides(task_id)
+                folder = (
+                    overrides.get("cwd")
+                    or terminal.get_session_cwd(task_id)
+                    or config.get("cwd")
+                )
+        else:
+            files = _hermes_module("tools.file_tools")
+            folder = str(files._resolve_base_dir(task_id or "default"))
+    except BaseException:
+        return None
+    if not isinstance(folder, str) or not os.path.isabs(folder):
+        return None
+    return folder
 
 
 def _render(value: Any) -> str:
@@ -155,9 +243,11 @@ def _pre_tool_call(
     args: Any = None,
     session_id: str = "",
     tool_call_id: str = "",
+    task_id: str = "",
     **_: Any,
 ) -> dict[str, str] | None:
     _required_identity(tool_name, args, session_id, tool_call_id)
+    _clear_agent_context(session_id)
     governance_session_id, agent_id = _governance_identity(session_id)
     payload = {
         "session_id": governance_session_id,
@@ -167,6 +257,9 @@ def _pre_tool_call(
         "tool_use_id": tool_call_id,
         "tool_input": args,
     }
+    tool_cwd = _tool_working_directory(tool_name, task_id if isinstance(task_id, str) else "")
+    if tool_cwd is not None:
+        payload["tool_cwd"] = tool_cwd
     if agent_id is not None:
         payload["agent_id"] = agent_id
     completed = _run_adapter("pre_tool_call", payload)
@@ -174,13 +267,33 @@ def _pre_tool_call(
     if not isinstance(instruction, dict):
         raise ValueError("adapter instruction is not an object")
     if completed.returncode == 0:
-        if not set(instruction).issubset({"warning"}):
+        if not set(instruction).issubset({"warning", "additionalContext"}):
             raise ValueError("Hermes pre-action allow carried an unknown instruction")
         warning = instruction.get("warning")
         if warning is not None:
             if not isinstance(warning, str) or not warning:
                 raise ValueError("adapter warning is not a non-empty string")
-            logger.warning("isonapse: %s", warning)
+            try:
+                logger.warning("isonapse: %s", warning)
+            except Exception:
+                _context_delivery_error()
+        context = instruction.get("additionalContext")
+        if "additionalContext" in instruction:
+            if not isinstance(context, str) or not context.strip() or len(context.encode("utf-8")) > MAX_AGENT_CONTEXT_BYTES:
+                raise ValueError("adapter agent context is not a bounded non-empty string")
+            # Keep the tail: the bounded policy warning follows existing advice.
+            bounded = context.encode("utf-8")[-MAX_AGENT_CONTEXT_BYTES:].decode("utf-8", errors="ignore")
+            # Optional delivery must not change a usable authorization. Invalid
+            # known fields were refused above, before this best-effort side effect.
+            try:
+                with _context_lock:
+                    _pending_agent_context[session_id] = bounded
+                    _pending_agent_context.move_to_end(session_id)
+                    while len(_pending_agent_context) > MAX_CONTEXT_SESSIONS:
+                        _pending_agent_context.popitem(last=False)
+                logger.warning("isonapse decision context: %s", bounded)
+            except Exception:
+                _context_delivery_error()
         return None
     if (
         set(instruction) == {"action", "message"}
@@ -296,6 +409,8 @@ def _lifecycle(event: str, session_id: str) -> None:
 
 
 def _lifecycle_callback(event: str, session_id: str = "", **_: Any) -> None:
+    if isinstance(session_id, str):
+        _clear_agent_context(session_id)
     try:
         _lifecycle(event, session_id)
     except BaseException as error:
@@ -337,6 +452,7 @@ def _register_priority_hooks(ctx: Any) -> None:
         )
     registrations = [
         ("pre_tool_call", pre_tool_call),
+        ("pre_llm_call", pre_llm_call),
         ("transform_tool_result", transform_tool_result),
         ("on_session_start", on_session_start),
         ("on_session_end", on_session_end),
