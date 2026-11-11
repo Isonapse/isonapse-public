@@ -1,4 +1,4 @@
-<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=dfd2472ec4d2a15ae3ea80714abbb200363f5caa -->
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=0a34b34f2d830a1ea204a71c09a007037952464d -->
 # Isonapse — a local policy and safety layer for coding agents
 
 > **Status — Public beta:** free during the beta ·
@@ -31,6 +31,8 @@ the code and a verifiable record of what their agents did.
 [Discussions](https://github.com/Isonapse/isonapse-public/discussions) ·
 Security: security@isonapse.com, privately (see [SECURITY.md](SECURITY.md))
 
+<!-- isonapse-first-run:public-main:begin -->
+
 ## Install — public main
 
     brew install isonapse/tap/isonapse
@@ -40,6 +42,8 @@ Security: security@isonapse.com, privately (see [SECURITY.md](SECURITY.md))
 
 The install needs no GitHub token. Builds exist only for Apple silicon
 Macs and x86_64 Linux: Intel macOS is not supported, and Windows native is out of beta scope.
+
+<!-- isonapse-first-run:public-easy-install:begin -->
 
 With Docker running, the easy install sets up the Hook, the self-hosted
 Community Edition server and dashboard, and Claude Code and Codex in one step.
@@ -53,6 +57,8 @@ Setup pairs your browser with a code you type in the terminal; you finish in
 the dashboard, and every change you make there is a plan you approve once in
 your terminal. The [easy install guide](https://developer.isonapse.com/install#easy-install)
 covers each step and the limits to read first.
+
+<!-- isonapse-first-run:public-easy-install:end -->
 
 ## Supported hosts
 
@@ -145,7 +151,7 @@ Start Hermes in a recognized launch shape: the `hermes` executable, the
 puts on `PATH`, or a source checkout run as `python -m hermes_cli`. The control
 plane authenticates the plugin's calls by that Hermes process, so a launch it
 does not recognize, such as a renamed wrapper script, fails every tool call
-closed with `preparation-refused`; `isonapse hook doctor` reports it as
+closed with `preparation-refused`. `isonapse hook doctor --details` reports it as
 unauthenticated Hook ingress. Hermes covers pre-tool authorization and session
 lifecycle but cannot ask or rewrite: an ASK becomes a DENY, recorded when
 witness storage is available. Gate mode is machine-wide, so a mode switch you
@@ -181,6 +187,8 @@ It installs under `~/.isonapse/bin` and does not edit your shell profile:
 Add that export to your shell profile for future sessions, then run the same
 `hook init`, `hook start` and `hook status`.
 
+<!-- isonapse-first-run:public-main:end -->
+
 ## Upgrade
 
 After the upgrade and before the restart, run `isonapse hook status` and
@@ -196,7 +204,7 @@ restart approves every monitored file as it then is.
 For Hermes Agent or pi, rerun `isonapse hook init --host hermes` or
 `isonapse hook init --host pi` once `hook restart` has run, as you first ran
 it, with `--project` from that project for a project-only pi install. Until
-then, `hook status` reports the upgraded adapter as failing its integrity
+then, `hook status --details` reports the upgraded adapter as failing its integrity
 check.
 
 After an authorized personal-plugin upgrade, rerun `isonapse hook init` once
@@ -335,7 +343,7 @@ disable and uninstall are summarized below.
 | The daemon is not running or refuses to start | Run `isonapse hook start`, then `isonapse hook doctor`. Read the failure it reports and `controlplane.log` in the data directory (normally `~/.isonapse`). A missing required model is repaired with `isonapse hook intel download`, which also fetches the optional models. |
 | The installed, running or plugin versions disagree | Upgrade with the package manager you installed with, run `isonapse hook restart` and check `isonapse hook status`. With an authorized personal Claude Code plugin, also rerun `isonapse hook init`, then start a fresh Claude Code session and check `/hooks`. |
 | A skill or custom command is blocked before it runs | Run `isonapse hook skill check` and `isonapse hook skill diff`, and review the change against a trusted source. `isonapse hook skill trust` then accepts the current files; `isonapse hook skill untrust` revokes one until you trust it again. |
-| `[session-structural-capacity]` blocks in a long multi-agent session | The session reached its fixed limit of 512 distinct agent and capability pairs or 64 agents; every program or subcommand an agent runs in Bash is its own capability. No policy, approval or mode change clears it: after in-flight work and approvals settle, run `isonapse hook reset-structural --host <HOST> -- <SESSION_ID>` in your own terminal, or start a new session. A managed or unknown deployment refuses the reset. `isonapse hook status` prints a `Structural session capacity` line. |
+| `[session-structural-capacity]` blocks in a long multi-agent session | The session reached its fixed limit of 512 distinct agent and capability pairs or 64 agents. Every program or subcommand an agent runs in Bash is its own capability. No policy, approval or mode change clears the limit. After in-flight work and approvals settle, run `isonapse hook reset-structural --host <HOST> -- <SESSION_ID>` in your own terminal, or start a new session. A managed or unknown deployment refuses the reset. `isonapse hook status --details` prints a `Structural session capacity` line. |
 | Optional model assistance is unavailable | `isonapse hook intel status` shows whether the files are present, verified and in use. `isonapse hook intel download` provisions or repairs them; restart after a repair. Without them, narrower local checks still run. |
 | Codex refuses every tool call after an Isonapse upgrade | Run `isonapse hook restart`, then `isonapse hook adk-pin` to re-pin the upgraded Hook. |
 | Codex runs tools but no new receipt appears | Codex runs tools unchecked while it does not trust its hook definitions. Trust them again in Codex's `/hooks`, make one harmless call and confirm a new receipt with `isonapse hook report --host <id>`. |
