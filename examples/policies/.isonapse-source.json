@@ -3,11 +3,11 @@
   "manifest_version": 1,
   "source_repository": "Isonapse/isonapse",
   "source_ref": "refs/heads/main",
-  "source_sha": "dfd2472ec4d2a15ae3ea80714abbb200363f5caa",
+  "source_sha": "0a34b34f2d830a1ea204a71c09a007037952464d",
   "files": [
     {
       "path": "README.md",
-      "git_blob_sha": "94dd724a513dc156279ef2fc88e477e8ab9216ae"
+      "git_blob_sha": "330ee871ffc75568672f0659f068230b99c0b150"
     },
     {
       "path": "fields/01-permissive.lua",

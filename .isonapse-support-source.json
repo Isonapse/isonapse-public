@@ -3,7 +3,7 @@
   "manifest_version": 1,
   "source_repository": "Isonapse/isonapse",
   "source_ref": "refs/heads/main",
-  "source_sha": "dfd2472ec4d2a15ae3ea80714abbb200363f5caa",
+  "source_sha": "0a34b34f2d830a1ea204a71c09a007037952464d",
   "files": [
     {
       "path": "LICENSE.md",
@@ -139,11 +139,11 @@
     },
     {
       "path": "adapter-toolkit/reference/codex/README.md",
-      "git_blob_sha": "6fdd1cbef2dd8fe7f4abcf1c5e9fbb2feb7b7837"
+      "git_blob_sha": "f5b8bcd29dfd6cafc79d3b83c519f8920b837420"
     },
     {
       "path": "adapter-toolkit/reference/codex/codex_hook.mjs",
-      "git_blob_sha": "0cc247c59321d8fc5694df81d05d455649a56394"
+      "git_blob_sha": "86e72f6a78f8b94cca84978b38cf706f62de2bc2"
     },
     {
       "path": "adapter-toolkit/reference/codex/hooks.json",
@@ -171,11 +171,11 @@
     },
     {
       "path": "adapter-toolkit/HOST-PROFILES.md",
-      "git_blob_sha": "61ad5daa777813f3613616c782f93a34082bd8b0"
+      "git_blob_sha": "f7c701a27f63933a42bc562ec7228efc3aa2143d"
     },
     {
       "path": "adapter-toolkit/INTEGRATION.md",
-      "git_blob_sha": "369f44e43fbea4c72a80bd68712cbe8587ca1f97"
+      "git_blob_sha": "b8f4fe430db7d0de935cc4306a93b7550bf3063e"
     },
     {
       "path": "adapter-toolkit/conformance/run.py",
@@ -215,7 +215,7 @@
     },
     {
       "path": "adapter-toolkit/reference/hermes/README.md",
-      "git_blob_sha": "78dfe6b189a8d2716672011ce95255f999557881"
+      "git_blob_sha": "d0da90a96fe93de3a8f027b05b1a1a3b6ad47cba"
     },
     {
       "path": "adapter-toolkit/conformance/fixtures/ask-with-native-approval.json",

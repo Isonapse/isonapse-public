@@ -90,3 +90,29 @@ All-agent capability blocks use `*`, which also covers `claude-code/<session>`
 Hook IDs. The shared-list example's database capability identifiers require a
 client that reports the target host; the Hook does not add that host to the
 capability of an ordinary Bash `psql` command.
+
+### Inspected-egress rules
+
+Use these keys in the operator policy for the planned inspected CE exit.
+Project and manifest policies may narrow decisions. They cannot grant
+resolver access or increase payload capture.
+
+```lua
+egress_resolve_hosts = { "api.example.com" },
+egress_evidence = {
+    ordinary_effect = {
+        request = { level = "redacted", required = true },
+        response = { level = "redacted" },
+    },
+},
+```
+
+`egress_resolve_hosts` accepts exact lowercase DNS names. Application
+policy still governs the HTTP request. `egress_evidence` also accepts
+`known_read`, `sensitive`, and `unsupported` classes. Each direction can
+choose `none`, `redacted`, or `sealed_full` within its privacy limit.
+The trusted exit supplies `ctx.metadata.egress` for `cap:http-request`.
+
+The inspected exit reads `egress_approval_hosts` from verified operator policy.
+Use exact hostnames. A listed host requires an operator answer in every mode;
+only one identical retry can use that answer. This does not grant DNS scope.

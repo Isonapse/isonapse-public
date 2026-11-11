@@ -106,10 +106,9 @@ tolerate extra fields but never guess at a different version.
 
 Every Isonapse release ships a new Hook binary, so its SHA-256 changes with
 every upgrade. Until the pin is updated, the ADK refuses every event with the
-`pin mismatch` cause. The reference Codex adapter blocks every prompt, denies
-every tool call and every permission request and withholds every result, and
-SessionStart and SessionEnd only log the cause: the host is blocked, not
-ungoverned.
+`pin mismatch` cause. The reference Codex adapter blocks prompts, denies
+tool calls and PermissionRequest events and withholds results it receives.
+SessionStart and SessionEnd only log the cause.
 
 With a pin file (step 5, recommended), `isonapse update` does the first two steps
 for you. By hand:
@@ -143,7 +142,7 @@ With an inline pin:
    editing. This is the ungoverned window that a pin file removes.
 3. Confirm as above.
 
-`isonapse hook status` (and `isonapse hook report --host <id>`) warns when a
+`isonapse hook status --details` (and `isonapse hook report --host <id>`) warns when a
 registered host's registration, the installed Hook, the pin file or a hook
 definition it can see changed 10 minutes or more ago, within the last 7 days,
 and no tool decision from that host has been receipted since. A declared

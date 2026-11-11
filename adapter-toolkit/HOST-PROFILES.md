@@ -9,7 +9,7 @@ unknown `--host` id is the registration handshake.
 | --- | --- | --- |
 | `hermes` | `reference/hermes/` | pre-action refusal and lifecycle; no trusted output perimeter |
 | `pi` | `reference/pi/` | input rewrite, output rewrite, and native ask |
-| `adk-codex-<digest>` (operator-registered) | `reference/codex/` | input rewrite (shell command, single-file `apply_patch`, MCP arguments) and the prompt boundary (a prompt can be blocked, not rewritten); no ask; no exact output replacement (a result can only be withheld); Codex's own permission requests are always denied; cooperative fail-open host; codex-cli 0.159.0 or newer, contract-tested on 0.164.0 on macOS arm64 and Linux x86_64 |
+| `adk-codex-<digest>` (operator-registered) | `reference/codex/` | input rewrite (shell command, single-file `apply_patch`, MCP arguments) and the prompt boundary (a prompt can be blocked, not rewritten); no ask; no exact output replacement (a result can only be withheld); delivered PermissionRequest events are denied and the opt-in `request_permissions` tool is refused at PreToolUse; cooperative fail-open host; codex-cli 0.159.0 or newer, contract-tested on 0.164.0 on macOS arm64 and Linux x86_64 |
 
 Builtin profiles retain their audited native mappings. Additional runtimes use
 operator-admitted profiles with canonical events and tool inputs. Profile data
@@ -172,6 +172,13 @@ whatever the Hook says. The control plane denies that tool for every
 registered id in every gate mode and writes one witnessed DENY; no policy can
 permit it. `reference/codex/` is the example.
 
+Codex 0.164.0 sends its opt-in `request_permissions` tool through ordinary
+PreToolUse and skips PermissionRequest for that tool. The reference adapter
+refuses the call before it runs. The control plane's decision has its own
+signed authorization DENY under `tool:CodexRequestPermissions`, with the
+reason `codex-request-permissions`. If the Hook cannot decide, the running
+adapter refuses without a denial receipt.
+
 ### Hook-command hosts
 
 Some hosts do not load a plugin. They start a fresh adapter process for every
@@ -205,7 +212,7 @@ profile; restart to deactivate the current snapshot. Missing/pruned approvals,
 changed pins, duplicate names and overlapping issuers refuse activation. Keep
 the approval history or reapprove explicitly after retention removes it.
 
-`isonapse hook status` compares each registered host's last receipted tool
+`isonapse hook status --details` compares each registered host's last receipted tool
 decision with its registration, the installed Hook, the ADK pin file and the
 hook definitions it can see, and warns when one changed with no tool decision
 from that host since; see `INTEGRATION.md`. `host-profile evidence <name>

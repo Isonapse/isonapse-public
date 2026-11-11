@@ -40,7 +40,8 @@ policy.
 | Approval (`ask`) | **no**: Codex parses `ask` but does not support it and lets the tool run | never declared; an `ask` is a deny |
 | Output replacement | **no exact replacement**: PostToolUse can only withhold a result | never declared; any required replacement or refusal is `decision:"block"` |
 | Prompt boundary | yes: UserPromptSubmit can block a prompt (`decision:"block"`), not rewrite it | `--prompt-boundary`; a Hook deny is a block, see "Prompt checks" below |
-| Codex's own permission requests | PermissionRequest: allow or deny an escalation Codex would otherwise ask you (or its reviewer) to approve | always denied, never allowed, never left to Codex's own prompt; see "Codex's own permission requests" below |
+| Codex's own permission requests | PermissionRequest for escalations Codex sends to the hook | every delivered event is denied |
+| Opt-in `request_permissions` tool | ordinary PreToolUse before Codex's native approval flow | refused before the tool runs, with a distinct authorization DENY when the control plane decides |
 | Lifecycle | SessionStart (60 s budget), SessionEnd (3 s budget), both advisory | acknowledged; cannot block |
 
 The adapter preserves JSON integer arguments and exact input replacements,
@@ -80,7 +81,7 @@ re-trust after every edit of the definition.
 Isonapse's direct-write self-protection covers Codex home/project configuration,
 hooks and rules, registered adapter directories and their adjacent dependencies,
 and supported shell startup files, including an absolute `ZDOTDIR`. Make operator
-changes outside the governed session. `hook status` and `hook doctor` show the
+changes outside the governed session. `hook status --details` and `hook doctor --details` show the
 resolved paths in their own environment; the quiet-host warning includes bounded
 file-time watches of configuration/startup files and nested adapter dependencies.
 This is a heuristic without a stored dependency baseline. It cannot establish that
@@ -219,10 +220,11 @@ approvals_reviewer = "user"
 hooks = true
 ```
 
-   The adapter denies every one of Codex's own permission requests. If it
-   ever gives no answer (it never started, or it timed out), Codex asks its
-   approvals reviewer; `"user"` makes that you, never Codex's reviewer
-   model. A root-written Codex policy (`/etc/codex/requirements.toml`) can
+   The adapter denies PermissionRequest events it receives and refuses the
+   opt-in `request_permissions` tool at PreToolUse. If a hook gives no answer
+   because the adapter never started or timed out, Codex can use its approvals
+   reviewer. `"user"` makes that you. A root-written Codex policy
+   (`/etc/codex/requirements.toml`) can
    enforce the same with `allowed_approvals_reviewers = ["user"]`; Isonapse
    does not write that file today.
 
@@ -242,10 +244,10 @@ isonapse hook restart
 isonapse hook adk-pin
 ```
 
-**Until `adk-pin` has run, Codex is blocked, not ungoverned.** The ADK refuses
+**A stale pin blocks Codex calls that reach the adapter.** The ADK refuses
 every event with the `pin mismatch` cause, whose text names
-`isonapse hook adk-pin`; the adapter blocks every prompt, denies every tool
-call and every permission request and withholds every result, and
+`isonapse hook adk-pin`. The adapter blocks prompts, denies tool calls and
+PermissionRequest events and withholds results it receives, and
 SessionStart and SessionEnd only log the cause. `codex exec` shows nothing
 for a blocked prompt: the turn ends without a model request or a message.
 The hook definition does not change, so you do not re-trust it. That Codex
@@ -283,13 +285,13 @@ definition silently, so between the edit and the re-trust every tool runs with
 no Isonapse decision and no receipt. This was observed on codex-cli 0.155.1
 and is not a maintained test. When `hooks.json` changed 10 minutes or more
 ago and no tool decision from the host has been receipted since,
-`isonapse hook status` and `isonapse hook report --host …` print a warning
+`isonapse hook status --details` and `isonapse hook report --host …` print a warning
 that names the re-trust; a session start alone does not clear it, because
 Codex appears to review each hook entry on its own (inferred, not a
 maintained test). For a profile named `codex…` or registered with
 `codex_hook.mjs`, the check reads `$CODEX_HOME/hooks.json`, or
 `~/.codex/hooks.json` when `CODEX_HOME` is unset, as the shell that runs
-`isonapse hook status` sees them: run it with the same `CODEX_HOME` as Codex.
+`isonapse hook status --details` sees them: run it with the same `CODEX_HOME` as Codex.
 A `hooks.json` whose entries no longer name the host ID still counts, and is
 named as such; so do a missing one (timed by its directory; with the
 directory gone too, only a note once a tool decision is in the window) and
@@ -297,11 +299,14 @@ one Codex cannot read, and a symbolic link counts by its own times as well as
 its target's. It is a heuristic, not
 a guarantee: confirm new receipts yourself. Changing the Node
 interpreter likewise needs `host-profile register --replace`, a restart, the
-new host id in all six entries and a re-trust.
+new host id in all six entries and a re-trust. If the old interpreter or
+adapter only moved, restore the registered file to its original path and
+restart to use the existing host id.
 
-Never extract the toolkit over the registered `codex_hook.mjs`: the
-registration records that file's identity, and until you re-register the
-daemon refuses the adapter, which then answers every event with a deny.
+Never extract the toolkit over the registered `codex_hook.mjs`. The
+registration pins that file. If its bytes no longer match, the running
+control plane refuses its Hook calls. On restart the control plane starts,
+quarantines that profile and keeps other hosts active.
 
 **Moving from the four-entry adapter.** The adapter that answers Codex's own
 permission requests and checks prompts is registered with one more flag and
@@ -342,6 +347,9 @@ Remove the six `hooks.json` entries (or disable them in `/hooks`), then
 `isonapse hook host-profile remove codex`, `isonapse hook restart`, and
 remove `~/isonapse-codex`. The pin file stays in `~/.isonapse/adk/` for any
 other ADK host; delete that directory if none uses it.
+The authenticated removal command also works while the profile is
+quarantined, including when its script is already gone. Restarting clears
+it from the quarantine report.
 
 ## What the model sees
 
@@ -426,18 +434,15 @@ thread, which renews it.
 
 ## Codex's own permission requests
 
-Codex asks for approval when an action needs more than its sandbox allows: a
-command to run outside the sandbox, network access, input to a command that
-runs with elevated permissions, a file change outside the workspace, an MCP
-tool call that needs approval, or wider permissions (`request_permissions`).
-It first sends each such request to the PermissionRequest hook, and a hook's
-allow or deny is final: it skips both you and Codex's own reviewer.
-
-The adapter denies every one, whatever the request:
+Codex can ask for approval when an action needs more than its sandbox
+allows, such as a command or file change outside the workspace or an MCP tool
+that needs approval. For requests Codex sends to its PermissionRequest
+hook, an explicit answer bypasses Codex's own reviewer. The adapter denies
+every event it receives, including unfamiliar categories:
 
 - It never answers allow, so nothing Isonapse says approves an escalation.
-- It never stays silent, so no request falls through to Codex's own approval
-  prompt, whose answer Isonapse would not record.
+- A running adapter returns an explicit denial so the delivered request
+  stops at the hook.
 - It asks the Hook first, under the reserved tool name `HostPermissionRequest`
   with Codex's tool name and input. The control plane denies every such
   request in every gate mode, whatever the policy says, and writes one
@@ -445,26 +450,32 @@ The adapter denies every one, whatever the request:
   reason `host permission request denied: …`. The model sees
   `Reason [host-permission-request]`, and the `Evidence:` line names the
   receipt.
-- When the Hook cannot be used or the control plane is unreachable, the
-  request is still denied, naming the cause, and no receipt is written.
+- If the Hook is older, unavailable or otherwise cannot deny the request,
+  the running adapter refuses without a denial receipt.
+
+Codex 0.164.0 disables the `request_permissions` tool by default. When you
+enable `request_permissions_tool`, Codex offers the tool and sends ordinary
+PreToolUse before its native approval flow. It sends no PermissionRequest
+event for this tool. The adapter refuses it before it runs. When the control
+plane decides, it records one authorization DENY in every gate mode with
+capability `tool:CodexRequestPermissions`. The model sees
+`Reason [codex-request-permissions]`. If the Hook cannot make that decision,
+the running adapter still refuses without a denial receipt.
 
 What this means:
 
-- An action that needs to leave the sandbox does not run. Do the work inside
-  the sandbox, or change Codex's sandbox configuration yourself.
-- The escalated action's own PreToolUse decision comes first and is receipted
-  on its own, often as a PERMIT, because that hook sees only the command and
-  not the escalation. The PermissionRequest DENY follows, and the action never
-  runs.
+- For an escalated command that delivers both events, its own PreToolUse
+  decision comes first and has its own receipt, often a PERMIT because the
+  event carries the command alone. The subsequent PermissionRequest DENY
+  stops the escalation.
 - `codex exec` never asks: it runs with approvals set to `never`, so Codex
   itself refuses an escalation there and no PermissionRequest fires.
 - Codex 0.164.0 asks about network access only when an administrator has set
   a managed network requirement in `/etc/codex/requirements.toml`; without
   one it refuses a host outside its allowlist itself.
-- If the adapter never starts or Codex's hook timeout expires, Codex gets no
-  answer and asks its approvals reviewer. Install step 5 sets
-  `approvals_reviewer = "user"`, so that is you, never a reviewer model; that
-  answer is not recorded by Isonapse.
+- If the adapter never starts or Codex's hook timeout expires, Codex can use
+  its own approvals reviewer. Install step 5 sets `approvals_reviewer = "user"`.
+  Isonapse records no receipt for that answer.
 
 ## Prompt checks
 
@@ -519,7 +530,7 @@ because both read the same file.
 
 `preparation-refused` and `session-identity-expired` are identity and session
 checks that run before policy. Profile mode does not prevent them, and no
-receipt is written. Start with `isonapse hook doctor`: it counts recent
+receipt is written. Use `isonapse hook doctor --details` to count recent
 refusals by class, lists each registered host profile with whether its
 interpreter and adapter still match the registration and whether the running
 control plane has activated them, and checks
@@ -538,10 +549,11 @@ cannot prove it is a refused SessionStart.
 
 | What you see | Cause | Fix |
 | --- | --- | --- |
-| Every call refused with `preparation-refused` saying the control plane did not recognize this caller as a governed host, after you changed the adapter, the interpreter or the toolkit | Identity drift: the registration pins the old interpreter or adapter bytes, and the host id changed with them. `hook doctor` reports that the profile's files do not match its registration, or a `hooks.json` host id that no profile has | `isonapse hook host-profile register --replace codex-profile.json`, `isonapse hook restart`, copy the new id from `isonapse hook host-profile list` into `--host` in all six entries, then re-trust them in `/hooks` before any prompt |
-| The same refusal while `hook doctor` reports that the files match their registration | The files were reinstalled since the control plane started, which `hook doctor` reports under `Registered host activation`, or the entries' `--hook` path is not the configured `hook_binary_path` | Run `isonapse hook restart`; check `--hook` against `hook_binary_path` in `~/.isonapse/config.toml` |
+| Detailed status or doctor shows Codex quarantined, or a call reaching the Hook reports `registered-host-quarantined` | The control plane started without this registration and lists the reason. If the interpreter or script is missing, Codex may be unable to launch the adapter at all | If unused, run `isonapse hook host-profile remove codex`. To use it again, restore the exact registered files at their original paths and run `isonapse hook restart`, or follow the replacement steps above for intentional changes |
+| Every call refused with `preparation-refused` saying the control plane did not recognize this caller as a governed host, after you changed the adapter, the interpreter or the toolkit | Identity drift: the registration pins the old interpreter or adapter bytes, and the host id changed with them. `hook doctor --details` reports that the profile's files do not match its registration, or a `hooks.json` host id that no profile has | `isonapse hook host-profile register --replace codex-profile.json`, `isonapse hook restart`, copy the new id from `isonapse hook host-profile list` into `--host` in all six entries, then re-trust them in `/hooks` before any prompt |
+| The same refusal while `hook doctor --details` reports that the files match their registration | The files were reinstalled since the control plane started, which `hook doctor --details` reports under `Registered host activation`, or the entries' `--hook` path is not the configured `hook_binary_path` | Run `isonapse hook restart`; check `--hook` against `hook_binary_path` in `~/.isonapse/config.toml` |
 | Every call refused with `session-identity-expired` after a long thread | The session's identity expired after 8 hours; Codex renews it only at the thread's next SessionStart | Resume the thread; if the resume warns `failed to bind session identity` (the Hook no longer holds the session's key), start a new thread |
-| Tool calls run with no Isonapse decision and no receipt, and `hook doctor` warns about entries that run the Hook directly | Claude-style entries (the Hook called without the adapter) copied into `~/.codex/hooks.json`. The Hook answers them with `ask`, which Codex runs, so those calls are not refused: they run without Isonapse (a fail-open state) | Replace them with the six entries from the toolkit's `reference/codex/hooks.json` and re-trust them |
+| Tool calls run with no Isonapse decision and no receipt, and `hook doctor --details` warns about entries that run the Hook directly | Claude-style entries (the Hook called without the adapter) copied into `~/.codex/hooks.json`. The Hook answers them with `ask`, which Codex runs, so those calls are not refused: they run without Isonapse (a fail-open state) | Replace them with the six entries from the toolkit's `reference/codex/hooks.json` and re-trust them |
 | Refusals only in the ChatGPT desktop app | The app runs the same hooks but is unproven and unsupported | Use Codex CLI, at a qualified version where you can |
 
 ## Tool mapping
@@ -607,7 +619,7 @@ cannot prove it is a refused SessionStart.
   request to Codex's own approval prompt and lets a prompt through unchecked.
 - PostToolUse fires for commands that exit non-zero (the result is bound and
   witnessed) but not when Codex itself failed to run the tool.
-- `hook status` and `hook doctor` warn heuristically when a registered
+- `hook status --details` and `hook doctor --details` warn heuristically when a registered
   Codex host may have stopped being governed, including after its hook
   definitions change. A host that runs no hooks leaves no other trace,
   and invoking the registered adapter can clear the warning. Confirm
@@ -641,9 +653,9 @@ cannot prove it is a refused SessionStart.
   approves everything: a command outside the sandbox, a file change outside
   the workspace and an MCP tool that needs approval are each denied with one
   witnessed DENY, and no approval reaches the client. `codex exec` sends
-  nothing to the model for a prompt the Hook blocks. Network access, input to
-  an elevated session and wider permissions are proven with Codex's payload
-  shapes against the real daemon only.
+  nothing to the model for a prompt the Hook blocks. That permission-request
+  test does not exercise managed network access, elevated stdin or the
+  opt-in `request_permissions` tool.
 - **Not proven:** the ChatGPT desktop app's Codex
   workspace, which runs the same `~/.codex` hooks; a hosted-model install on
   macOS; subagents;

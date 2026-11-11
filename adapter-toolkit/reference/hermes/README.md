@@ -23,7 +23,7 @@ Installation is performed by `isonapse hook init --host hermes`.
 Self-protection covers profile selection (`active_profile` and `profiles/`) as
 well as the plugin/configuration roots. Creating or switching profiles requires
 an operator terminal outside the governed session. Install Isonapse in the selected
-profile, start a fresh session and run `isonapse hook status` with the same
+profile, start a fresh session and run `isonapse hook status --details` with the same
 `HERMES_HOME`. Status resolves the active runtime profile; doctor lists disk paths
 and reports that active runtime selection is unknown without executing Hermes.
 
@@ -33,7 +33,7 @@ consumed once. A healthy tool decision or session start/end/finalize clears it.
 The process-local queue holds at most 64 sessions and 64 KiB per session; a
 plugin restart clears it. Operator-only warnings never enter that queue.
 Optional delivery failures preserve an authorization; malformed known context
-is refused. Use `isonapse hook status` for current policy-load diagnostics.
+is refused. Use `isonapse hook status --details` for current policy-load diagnostics.
 
 The plugin reports two folders. `cwd` is Hermes's own process folder, where
 Hermes loads project plugins. `tool_cwd` is the folder Hermes runs the tool
@@ -53,5 +53,5 @@ script that pipx, `uv tool install` or a venv places on `PATH` (a Python
 interpreter running `<prefix>/bin/hermes`), or a source checkout run as
 `python -m hermes_cli`. A renamed or look-alike wrapper (`hermes-notes`,
 `hermes.py`, the `hermes-agent` runner) is refused; every tool call then fails
-closed with `preparation-refused` and `isonapse hook doctor` reports the
+closed with `preparation-refused` and `isonapse hook doctor --details` reports the
 refusal as unauthenticated Hook ingress.

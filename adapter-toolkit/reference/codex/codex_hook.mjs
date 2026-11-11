@@ -38,6 +38,8 @@ import {resolve} from "node:path";
 // The canonical tool name for a host's own permission request
 // (`isonapse_hook::host::HOST_PERMISSION_REQUEST_TOOL`).
 const HOST_PERMISSION_REQUEST_TOOL = "HostPermissionRequest";
+// The model-callable tool has a separate native approval path on 0.164.0.
+const CODEX_REQUEST_PERMISSIONS_TOOL = "CodexRequestPermissions";
 
 // Codex reads a patch with its own parser (codex-rs/apply-patch parser.rs and
 // streaming_parser.rs, identical at rust-v0.155.1, 0.159.0 and 0.164.0). Its
@@ -201,6 +203,8 @@ function mapTool(payload, Refused) {
     throw new Refused("tool call without a tool name and input object");
   }
   if (tool_name === HOST_PERMISSION_REQUEST_TOOL) throw new Refused(`${HOST_PERMISSION_REQUEST_TOOL} is reserved for Codex's own permission requests`);
+  if (tool_name === CODEX_REQUEST_PERMISSIONS_TOOL) throw new Refused(`${CODEX_REQUEST_PERMISSIONS_TOOL} is reserved for Codex's request_permissions tool`);
+  if (tool_name === "request_permissions") return {tool_name: CODEX_REQUEST_PERMISSIONS_TOOL, tool_input};
   if (tool_name === "apply_patch") return mapApplyPatch(tool_input, cwd, Refused);
   // Bash `{command}` and `mcp__<server>__<tool>` are already canonical; other
   // Codex tools pass through under their own name (capability `tool:<name>`).
@@ -307,6 +311,11 @@ async function handle(adk, hookCommand, client, payload) {
     // No `approve`: Codex has no hook-reachable approval surface, so `ask` refuses.
     const outcome = await hookCommand(client, {...payload, ...mapped});
     const note = outcome.operatorMessage ? `isonapse-codex: ${outcome.operatorMessage}\n` : "";
+    const permissionTool = mapped.tool_name === CODEX_REQUEST_PERMISSIONS_TOOL;
+    if (permissionTool && outcome.kind !== "refuse") {
+      const reason = "Isonapse: Codex's request_permissions tool is denied before execution. This Hook did not deny it, so no Isonapse denial receipt names it. Check that Isonapse and this adapter come from the same release.";
+      return {stdout: preDeny(reason, reason), stderr: `${note}isonapse-codex: ${reason}\n`, exitCode: 0};
+    }
     const context = outcome.decision?.additionalContext;
     const additional = context ? {additionalContext: context} : {};
     if (outcome.kind === "proceed") return {stdout: context ? json({hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow", ...additional}, ...(outcome.operatorMessage ? {systemMessage: outcome.operatorMessage} : {})}) : "", stderr: note, exitCode: 0};
@@ -319,7 +328,7 @@ async function handle(adk, hookCommand, client, payload) {
         return {stdout: preDeny(`Isonapse: ${error.message}`, outcome.operatorMessage), stderr: note, exitCode: 0};
       }
     }
-    return {stdout: preDeny(`Isonapse: ${sentence(outcome.reason)}.${retryNote(outcome)}`, operatorText(outcome)), stderr: note, exitCode: 0};
+    return {stdout: preDeny(`Isonapse: ${sentence(outcome.reason)}.${permissionTool ? "" : retryNote(outcome)}`, operatorText(outcome)), stderr: note, exitCode: 0};
   }
   if (name === "PermissionRequest") {
     // Every path answers deny: a refused mapping, any Hook outcome, and (in the
