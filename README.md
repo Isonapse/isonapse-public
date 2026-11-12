@@ -1,4 +1,4 @@
-<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=0a34b34f2d830a1ea204a71c09a007037952464d -->
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=b3d4ea1666eaa30e034966a632006c1e4b5f4bf4 -->
 # Isonapse — a local policy and safety layer for coding agents
 
 > **Status — Public beta:** free during the beta ·
