@@ -14,10 +14,9 @@
 -- It runs in the same sandbox as load time — no io, no os; reaching for
 -- them fails closed.
 --
--- ctx fields on the enforce gate path: agent_id, capability, domain,
--- and path (the edited/written file_path) are populated. payload_size
--- and metadata are filled only by callers that supply them (e.g. the
--- LLM / filesystem proxy). Always nil-guard optional fields, as below.
+-- ctx fields for an agent's action: agent_id and capability, and, when the
+-- action has them, domain and path (the file it reads or writes). Other
+-- fields may be nil. Always nil-guard optional fields, as below.
 --
 -- NOTE: in Lua a chunk's `return` must be its LAST statement, so the
 -- function is defined first and the policy table is returned at the end.

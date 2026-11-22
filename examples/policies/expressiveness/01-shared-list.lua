@@ -7,9 +7,10 @@
 --
 -- Here we have a list of production database identifiers that should be
 -- denied as a custom CAPABILITY, denied by the
--- DOMAIN blocklist (so nothing reaches them by hostname), and blocked
--- from FILE-WRITE paths (so config files referencing them stay
--- read-only). Editing the list updates all three sites at once.
+-- DOMAIN blocklist (so Claude Code's WebFetch cannot reach them by
+-- hostname), and blocked from FILE-WRITE paths (so the `.conf` and `.cfg`
+-- files named after them cannot be written). Editing the list updates all
+-- three sites at once.
 --
 -- The database capability assumes a client reports its target host in that
 -- identifier. The Hook's Bash `psql` reports only `tool:Bash:psql`, so this
@@ -39,8 +40,8 @@ local function blocked_domain_list()
   return domains
 end
 
--- Derive the file-write pattern list — config files in /etc that
--- reference any of these hosts.
+-- Derive the file-write pattern list — config files named after these
+-- hosts, in any folder.
 local function blocked_file_pattern_list()
   local patterns = {}
   for _, host in ipairs(PROD_DBS) do

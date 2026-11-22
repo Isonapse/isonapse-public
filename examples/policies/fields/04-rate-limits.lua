@@ -22,10 +22,9 @@
 -- visible in the dashboard / hook output, useful for spotting a
 -- runaway-loop before it hits the wall.
 --
--- These are HARD counters (deterministic), not energy-graded checks.
--- They live in memory in the controlplane process; a controlplane
--- restart resets the per-minute window. (Spend/budget counters are
--- different — those persist to disk via SqliteDeploymentState; see
+-- These are hard counters, kept in memory for each agent session: a new
+-- session, a restart of Isonapse or a policy reload starts every count
+-- again. (Spend counters are different: they persist on disk; see
 -- 07-llm-and-coherence.lua.)
 --
 -- Try it:

@@ -16,8 +16,8 @@
 --   - `tool:mcp:<encoded-server>:<encoded-tool>` — MCP capabilities (server-scoped)
 --   - `cap:shell-exec`, `cap:file-write`, `cap:http-request` — internal capabilities
 --
--- A DENY here ALWAYS wins. Nothing downstream (learned gate, destructive
--- veto override) can resurrect a capability blocked at this layer.
+-- A DENY here wins over every rule except an `actions` rule that names the
+-- exact capability: only such a rule can allow it again.
 --
 -- Try it:
 --   * `agent:untrusted` proposing `cap:shell-exec` -> DENIED
@@ -35,11 +35,9 @@ return {
     },
 
     -- Wildcard pattern: NO agent is allowed to escalate via sudo / dd,
-    -- regardless of trust level. The destructive-veto layer downstream
-    -- also catches these but a hard DENY here is the deterministic
-    -- floor — destructive veto can be overridden by an explicit
-    -- operator PERMIT in `actions` (see 05-action-rules.lua); a
-    -- blocked_capabilities DENY cannot.
+    -- regardless of trust level. A broader `actions` rule, such as one on
+    -- `tool:Bash`, cannot allow them again; only a rule that names
+    -- `tool:Bash:sudo` itself can (see 05-action-rules.lua).
     ["*"] = {
       "tool:Bash:sudo",
       "tool:Bash:dd",

@@ -111,6 +111,19 @@ egress_evidence = {
 policy still governs the HTTP request. `egress_evidence` also accepts
 `known_read`, `sensitive`, and `unsupported` classes. Each direction can
 choose `none`, `redacted`, or `sealed_full` within its privacy limit.
+A request that carries a credential the exit places, such as a wrapped
+agent's API key, is `sensitive`, and so is its response: neither stores a
+payload by default. `sensitive = { request = { level = "redacted" } }`
+keeps the request; the response is never stored, and a required
+`sensitive.response` refuses the request (#1463).
+A body the exit cannot read, such as a web page, a binary file or a form,
+is `unsupported`. It is not stored by default, and a request that went
+through is recorded as `succeeded`. An `unsupported` level asks for a copy
+the exit cannot keep: a request that went through is then recorded as
+`payload-unavailable`. A required level refuses a request whose own body
+the exit cannot read before the lookup; for such an answer, the request is
+recorded as `payload-evidence-required` after the answer reached the agent
+(#1653).
 The trusted exit supplies `ctx.metadata.egress` for `cap:http-request`.
 
 The inspected exit reads `egress_approval_hosts` from verified operator policy.

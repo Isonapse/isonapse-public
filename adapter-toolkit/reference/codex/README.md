@@ -231,7 +231,7 @@ hooks = true
 6. Start `codex`, run `/hooks`, review and trust all six definitions.
 7. Make one harmless call. In Normal and Enforce mode the first action is the
    cold-start deny (see below); the retry proceeds. Then run
-   `isonapse hook report --host adk-codex-…` and `isonapse hook witness verify`.
+   `isonapse hook report --host adk-codex-… --details` and `isonapse hook witness verify`.
 
 ## After an Isonapse upgrade
 
@@ -253,7 +253,7 @@ for a blocked prompt: the turn ends without a model request or a message.
 The hook definition does not change, so you do not re-trust it. That Codex
 keeps trusting a definition when only the pin file changes was a recorded run
 with codex-cli 0.155.1, not a maintained test. Make one harmless call and
-confirm with `isonapse hook report --host adk-codex-…` that new receipts
+confirm with `isonapse hook report --host adk-codex-… --details` that new receipts
 appear.
 
 ## When a release changes the adapter
@@ -278,14 +278,14 @@ cmp -s ~/isonapse-codex/codex_hook.mjs ~/isonapse-codex/isonapse-adapter-toolkit
    new id.
 3. Start `codex` and run `/hooks` **before any prompt**, and re-trust the six
    definitions. Never run `codex exec` first.
-4. Confirm with `isonapse hook report --host …` that new receipts appear.
+4. Confirm with `isonapse hook report --host … --details` that new receipts appear.
 
 **Editing the definition opens an ungoverned window.** Codex skips an edited
 definition silently, so between the edit and the re-trust every tool runs with
 no Isonapse decision and no receipt. This was observed on codex-cli 0.155.1
 and is not a maintained test. When `hooks.json` changed 10 minutes or more
 ago and no tool decision from the host has been receipted since,
-`isonapse hook status --details` and `isonapse hook report --host …` print a warning
+`isonapse hook status --details` and `isonapse hook report --host … --details` print a warning
 that names the re-trust; a session start alone does not clear it, because
 Codex appears to review each hook entry on its own (inferred, not a
 maintained test). For a profile named `codex…` or registered with
@@ -336,7 +336,7 @@ release's adapter and package (ADK 1.1.0 or later): an older adapter rejects
    `--hook-sha256-file '<pin file>'` and set `--host` to the new id.
 4. Start `codex`, run `/hooks` before any prompt, and re-trust the six
    definitions.
-5. Confirm with `isonapse hook report --host …` that new receipts appear.
+5. Confirm with `isonapse hook report --host … --details` that new receipts appear.
 
 This one edit opens the ungoverned window once. After it, an upgrade needs
 only `isonapse hook restart` and `isonapse hook adk-pin`.

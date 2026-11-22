@@ -692,6 +692,33 @@ test("#929 pin file: the Client keeps the pin source and re-reads the pin file o
   assert.equal((await call(client)).reason,`impostor ran as ${next}`);
 });
 
+async function waitForPid(marker) {
+  for(let tries=0;tries<500;tries++) {
+    try {
+      const pid=Number(await readFile(marker,"utf8"));
+      if(Number.isInteger(pid)&&pid>1) return pid;
+    } catch {}
+    await delay(10);
+  }
+}
+
+test("PID marker polling waits for populated content 1532",async t=>{
+  const marker=join(await scratch(t),"pid");
+  await writeFile(marker,"");
+  const reads=[];
+  await patched(fsp,"readFile",original=>async(path,...rest)=>{
+    const content=await original(path,...rest);
+    if(String(path)===marker) {
+      reads.push(content);
+      if(reads.length===1) await writeFile(marker,"4242");
+    }
+    return content;
+  },async()=>{
+    assert.equal(await waitForPid(marker),4242);
+  });
+  assert.deepEqual(reads,["","4242"],"polling must read the empty marker and then the published PID");
+});
+
 test("cancellation closes local pipes even when a descendant escapes its process group",{timeout:10000},async t=>{
   const directory=await realpath(await mkdtemp(join(tmpdir(),"isonapse-adk-holder-")));
   t.after(()=>rm(directory,{recursive:true,force:true}));
@@ -702,9 +729,7 @@ test("cancellation closes local pipes even when a descendant escapes its process
   const result=assert.rejects(call(client,{signal:abort.signal}),Unavailable);
   let pid;
   try {
-    for(let tries=0;tries<500;tries++) {
-      try {pid=Number(await readFile(marker,'utf8'));break;} catch {await delay(10);}
-    }
+    pid=await waitForPid(marker);
     assert.ok(Number.isInteger(pid)&&pid>1,"escaped pipe holder must actually start");
     abort.abort();
     await result;

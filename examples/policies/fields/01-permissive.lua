@@ -1,23 +1,18 @@
 -- 01-permissive.lua — the minimum loadable policy.
 --
 -- This file is the smallest possible policy: an empty table that the engine
--- treats as "no rules" — every capability falls through to the gate's other
--- layers (destructive veto, learned gate, DEFER) without being denied or
--- permitted explicitly.
+-- treats as "no rules": no action is refused or allowed by a rule of yours,
+-- and Isonapse's own checks still apply.
 --
 -- POLICY_VERSION exists on every policy as an operator-supplied free-form
 -- label (SemVer, a git rev, a YYYY-MM-DD.N stamp — whatever you find
--- operationally meaningful). It's stamped on every gate-decision witness
--- receipt's `policy_version` field so an auditor replaying the chain can
--- answer "which policy version was in force at time T". The Blake3
--- `policy_hash` (commits to the literal bytes of THIS file) is the
+-- operationally meaningful). Every decision record carries it, so an
+-- auditor can tell which policy version was in force at the time. The
+-- Blake3 `policy_hash` (commits to the literal bytes of THIS file) is the
 -- machine-verifiable companion — use both.
 --
--- Try it:
---   1. Save this file as ~/.isonapse/policy/policy.lua
---   2. Restart the controlplane: `isonapse hook restart`
---   3. `isonapse hook policy show --summary` — every count should be 0
---   4. Any agent action falls through to the gate's default layers.
+-- Try it: `isonapse hook policy check 01-permissive.lua` loads it without
+-- changing anything.
 
 return {
   policy_version = "permissive-baseline-v1",

@@ -3,7 +3,7 @@
   "manifest_version": 1,
   "source_repository": "Isonapse/isonapse",
   "source_ref": "refs/heads/main",
-  "source_sha": "b3d4ea1666eaa30e034966a632006c1e4b5f4bf4",
+  "source_sha": "dfc0710105e4292a445a5c6cbfcf6688a44dab95",
   "files": [
     {
       "path": "LICENSE.md",
@@ -15,7 +15,7 @@
     },
     {
       "path": ".github/ISSUE_TEMPLATE/bug-report.yml",
-      "git_blob_sha": "39356b7cc4801831d909a586e3b05e86bf115e96"
+      "git_blob_sha": "291c4590be17c436888a91d10e90fda6da1737e0"
     },
     {
       "path": ".github/ISSUE_TEMPLATE/config.yml",
@@ -119,7 +119,7 @@
     },
     {
       "path": "adapter-toolkit/typescript/tests/adk.test.js",
-      "git_blob_sha": "87351ecfd323976e12c76f314dd5ffc9764b800c"
+      "git_blob_sha": "eafbdfcf94bdb79e2e64e08be7baead7d978e56e"
     },
     {
       "path": "adapter-toolkit/typescript/tests/runtime.test.js",
@@ -139,7 +139,7 @@
     },
     {
       "path": "adapter-toolkit/reference/codex/README.md",
-      "git_blob_sha": "f5b8bcd29dfd6cafc79d3b83c519f8920b837420"
+      "git_blob_sha": "7284ea77576cab3f7471741861ad251df6b6f25f"
     },
     {
       "path": "adapter-toolkit/reference/codex/codex_hook.mjs",
@@ -175,7 +175,7 @@
     },
     {
       "path": "adapter-toolkit/INTEGRATION.md",
-      "git_blob_sha": "b8f4fe430db7d0de935cc4306a93b7550bf3063e"
+      "git_blob_sha": "c4de465e55875c3b3430d2e2c06f791d639193e1"
     },
     {
       "path": "adapter-toolkit/conformance/run.py",
@@ -207,7 +207,7 @@
     },
     {
       "path": "adapter-toolkit/reference/pi/README.md",
-      "git_blob_sha": "0b9f7e6616dc5cd3480eabaa137c3e5b4dfc1712"
+      "git_blob_sha": "6aefc5fe8a52a75bb835acc1e163255fc1a2a8fe"
     },
     {
       "path": "adapter-toolkit/reference/pi/isonapse.ts",
@@ -215,7 +215,7 @@
     },
     {
       "path": "adapter-toolkit/reference/hermes/README.md",
-      "git_blob_sha": "d0da90a96fe93de3a8f027b05b1a1a3b6ad47cba"
+      "git_blob_sha": "0510273431067661715e034c055b12fc6ef80615"
     },
     {
       "path": "adapter-toolkit/conformance/fixtures/ask-with-native-approval.json",

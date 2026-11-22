@@ -1,6 +1,6 @@
 -- 05-base-plus-overrides.lua — layered authoring via deep table-merge.
 --
--- Organisations converge on a two-layer policy structure:
+-- Organizations converge on a two-layer policy structure:
 --
 --   BASE      — what's true for every team / project (org-wide baseline).
 --   OVERRIDES — what's specific to THIS team / project.

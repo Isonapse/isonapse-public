@@ -10,6 +10,12 @@ the installed runtime does not resolve an ambient npm dependency. It invokes the
 installed `isonapse-pi-adapter`; the Rust adapter and proprietary hook binary
 are not part of this toolkit.
 
+The dashboard's Overview and Health rows report only pi disk presence and adapter
+digest state, labelled “Runtime not verified here”, without executing pi. Folder
+governance stays “Checked in a terminal”. Use `isonapse hook status` or
+`isonapse hook doctor --details` from the actual folder; an adapter digest match
+alone proves no runtime activation or folder governance.
+
 The registered `pi` profile covers input rewrite, output rewrite, and native
 ask. The extension replaces pi's executable input object in place and verifies
 the replacement, so removed keys cannot survive as unauthorized arguments.

@@ -23,9 +23,9 @@
 -- globs, native image paths, visible shell read operands and copy sources;
 -- one under `tool:Write` covers every file write (Write, Edit, MultiEdit,
 -- NotebookEdit, Codex apply_patch, and the shell writes Isonapse reads in a
--- command: redirections, tee, cp, mv, ln, link, install, rsync, touch,
--- truncate, rm, rmdir, unlink, sed -i, dd of=, rename, git mv and Git's
--- other file writes, rsync --delete, pax and cpio). Moving a folder on the
+-- command: redirections and the common commands that copy, move, link,
+-- create, edit in place or remove files, Git's own file writes included).
+-- Unusual shell forms can be misread; see the limits below. Moving a folder on the
 -- way to a rule's folder (`mv docs x` under `docs/internal/`) or
 -- hard-linking a covered file (`ln`, `cp -l`) is refused too, by read rules
 -- as well; a symbolic link resolves on every use. Removing a folder that

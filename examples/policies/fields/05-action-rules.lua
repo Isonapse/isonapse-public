@@ -2,12 +2,13 @@
 -- PII/secret allowlists + secret injection.
 --
 -- The `actions` map is the most powerful per-capability surface and the
--- place for explicit operator decisions. An applicable PERMIT for, say,
--- `tool:Bash:git` waives the later destructive veto and learned lookup for a
--- standalone `git reset --hard`, but only after the policy, rate, structural,
--- shift, and evidence gate permits it. LEARNED is the cautious alternative: it
--- skips that veto but still requires the learned gate's capability/safety scope
--- and two-of-three quorum. It supports these fields:
+-- place for explicit operator decisions. A PERMIT for, say, `tool:Bash:git`
+-- means a destructive use such as `git reset --hard` no longer asks just for
+-- being destructive, once your other rules and Isonapse's own checks allow
+-- it; in Enforce, work Isonapse does not know yet can still ask. LEARNED is
+-- the cautious alternative: in Enforce it lets the action pass only when it
+-- matches work you approved before; in Normal it allows the action. It
+-- supports these fields:
 --
 --   decision         — "PERMIT" | "DENY" | "DEFER" | "LEARNED". Required.
 --                      DENY blocks; PERMIT is direct operator trust; DEFER
@@ -50,25 +51,31 @@
 --   - "local" — Bash, Read, Edit, Write — runs on YOUR host, can see
 --     plaintext PII (detokenised before the tool runs).
 --   - "external" — WebFetch, MCP, any HTTP egress — runs on someone
---     else's host, MUST NOT see plaintext (PII flows as `[PII_…]`
---     tokens; secrets aren't injected).
+--     else's host: existing `[PII_…]` vault tokens stay tokens (never
+--     detokenised for it). Plaintext the agent writes into WebFetch or MCP
+--     input is not scanned or tokenised, so the zone does not keep it from
+--     reaching the host. Secret placeholders (`{{ secret.NAME }}`) resolve
+--     only in Bash commands, outside Profile, and only for the secrets the
+--     rule's `allowed_secrets` lists, in either zone.
 -- Data grants descend only from a literal program/server key such as
 -- `tool:Bash:psql`, never from a whole-tool or wildcard key. A more-specific
 -- rule replaces rather than accumulates its ancestor's grants.
 --
--- Action decisions follow the documented precedence. DENY is terminal;
--- an applicable PERMIT that survives the policy, rate, and coherence filters
--- plus non-bypassable pattern/command-shape checks skips the later destructive
--- veto and learned gate; DEFER asks; LEARNED routes to the learned gate and can
--- skip only the destructive veto.
+-- How a rule here decides, in Normal and Enforce (in Profile, rules are only
+-- recorded): DENY refuses and DEFER asks. PERMIT allows, unless something
+-- else refuses: a file or folder rule, a site rule when the PERMIT lists
+-- `domains`, `check_action`, or Isonapse's own safety floor. A rule written
+-- for exactly this action skips your blocked actions, rate and size limits;
+-- a rule for a broader kind, such as `tool:Bash:git` for `git reset`, keeps
+-- them. The most specific rule wins, so a PERMIT on `tool:Bash:echo` carves
+-- an exception out of a DENY on `tool:Bash`. LEARNED is described above.
 
 return {
   policy_version = "action-rules-v1",
 
   actions = {
-    -- Explicit PERMIT that overrides the post-gate destructive veto. Operators
-    -- declare this when they intentionally want `git reset --hard` and friends
-    -- to flow once the earlier policy/rate/coherence gate is satisfied.
+    -- An allow rule for git: see what a PERMIT means at the top. Declare it
+    -- only when you intend that.
     ["tool:Bash:git"] = {
       decision = "PERMIT",
       reason = "operator-trusted git workflows",
@@ -144,10 +151,10 @@ return {
     },
 
     -- A third-party MCP capability. trust = "external" (the default,
-    -- explicit here for clarity) means tokens flow through unchanged —
-    -- the remote server only ever sees `[PII_…]` placeholders, never
-    -- raw values. No allowed_secrets — never inject local secret values
-    -- into external requests.
+    -- explicit here for clarity) means existing `[PII_…]` tokens in its
+    -- input stay tokens, never detokenised for it. Plaintext the agent
+    -- writes into the call is not tokenised and reaches the server as
+    -- written. No allowed_secrets: it needs no secret values.
     ["tool:mcp:third-party:lookup"] = {
       decision = "PERMIT",
       reason = "external MCP, tokens stay tokenised",

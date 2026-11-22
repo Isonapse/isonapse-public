@@ -74,10 +74,18 @@ Start Isonapse, trigger one harmless tool call, and inspect the session with
 the supported Isonapse CLI:
 
 ```sh
-isonapse hook report --host <registered-host-id>
+isonapse hook report --host <registered-host-id> --details
 isonapse hook witness verify
 isonapse hook witness query
 ```
+
+`report` normally opens with a short per-host summary. The explicit `--details`
+view above preserves its full text; scripts can use `--json` for structured
+counts and findings. `--host` also accepts an exact registered profile name,
+such as `codex`, or a built-in host name. Unknown or ambiguous selectors are
+refused; no report falls back to an unfiltered query. Lifetime learning and
+policy-suggestion counts remain machine-wide. A report shows recorded activity,
+not current host liveness or proof that hooks were never bypassed.
 
 A successful integration has both sides:
 
@@ -118,7 +126,7 @@ for you. By hand:
 2. Run `isonapse hook adk-pin`. It verifies the new Hook against its signed
    release manifest and rewrites the pin file. Until then every event is
    denied with the `pin mismatch` cause, whose text names this command.
-3. Confirm with one harmless action that `isonapse hook report --host <id>`
+3. Confirm with one harmless action that `isonapse hook report --host <id> --details`
    shows a new receipt from the upgraded build.
 
 The hook definition never changes, so a host that keys its hook trust on the
@@ -142,7 +150,7 @@ With an inline pin:
    editing. This is the ungoverned window that a pin file removes.
 3. Confirm as above.
 
-`isonapse hook status --details` (and `isonapse hook report --host <id>`) warns when a
+`isonapse hook status --details` (and `isonapse hook report --host <id> --details`) warns when a
 registered host's registration, the installed Hook, the pin file or a hook
 definition it can see changed 10 minutes or more ago, within the last 7 days,
 and no tool decision from that host has been receipted since. A declared

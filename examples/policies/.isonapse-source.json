@@ -3,19 +3,19 @@
   "manifest_version": 1,
   "source_repository": "Isonapse/isonapse",
   "source_ref": "refs/heads/main",
-  "source_sha": "b3d4ea1666eaa30e034966a632006c1e4b5f4bf4",
+  "source_sha": "dfc0710105e4292a445a5c6cbfcf6688a44dab95",
   "files": [
     {
       "path": "README.md",
-      "git_blob_sha": "330ee871ffc75568672f0659f068230b99c0b150"
+      "git_blob_sha": "a15edec31a0d05527b7a3ae749d8489f10f363a0"
     },
     {
       "path": "fields/01-permissive.lua",
-      "git_blob_sha": "8f1d4d15c96305208a069b940588497553968b09"
+      "git_blob_sha": "bc589ca6bb8b668381779513bd6bdb1bde00b022"
     },
     {
       "path": "fields/02-blocked-capabilities.lua",
-      "git_blob_sha": "726faaff97493d04c648f3cfacbf9124273180d2"
+      "git_blob_sha": "aea74ed2941be7f3a4eabcbedec7b9c01be29824"
     },
     {
       "path": "fields/03-domain-rules.lua",
@@ -23,11 +23,11 @@
     },
     {
       "path": "fields/04-rate-limits.lua",
-      "git_blob_sha": "2bb7058f407bd8e520775ad495be082cc6a5edfd"
+      "git_blob_sha": "90459cb1775368da1ce4897b1becf80925587d28"
     },
     {
       "path": "fields/05-action-rules.lua",
-      "git_blob_sha": "8f18dd4e64187fb5bca12491f15dfd960b01b81d"
+      "git_blob_sha": "bad13e1f4b72e89fcbca2fd8df12a9fa254632c7"
     },
     {
       "path": "fields/06-file-patterns.lua",
@@ -39,15 +39,15 @@
     },
     {
       "path": "fields/08-folder-rules.lua",
-      "git_blob_sha": "4700b69e6aabe6695cc19fd6913548ea0745c7ef"
+      "git_blob_sha": "218582d4c22232c1c54a054830134e725e0c609b"
     },
     {
       "path": "expressiveness/01-shared-list.lua",
-      "git_blob_sha": "3bb6767e9d0269aa4f494043cac80b6216c5d675"
+      "git_blob_sha": "d6402ea3b048b64b40da4315ae9b7f2e7bc4bf63"
     },
     {
       "path": "expressiveness/02-loop-allowlist.lua",
-      "git_blob_sha": "58ffba12f911e22620d8838018d06d70bc9eff58"
+      "git_blob_sha": "db86367f06ebebe08e509bafcc5cd5fce4a4f13a"
     },
     {
       "path": "expressiveness/03-helper-functions.lua",
@@ -59,15 +59,15 @@
     },
     {
       "path": "expressiveness/05-base-plus-overrides.lua",
-      "git_blob_sha": "97cd1a93dfe2ee68babf90034ea7215e8524b1fd"
+      "git_blob_sha": "7a9ab3b2fb654e280d9ed6283a9f438d525eb53e"
     },
     {
       "path": "expressiveness/06-config-environment.lua",
-      "git_blob_sha": "6595f4fde8853be3c522b29288b2f9a2cf44b1d9"
+      "git_blob_sha": "355dad6fe4906dfc3dbaa047fee300eab4e273a0"
     },
     {
       "path": "expressiveness/07-check-action-runtime.lua",
-      "git_blob_sha": "78b709626044483b962f62ca0642320da199144e"
+      "git_blob_sha": "aa69f1255fd81514910126fa86617c19e89e566e"
     }
   ]
 }

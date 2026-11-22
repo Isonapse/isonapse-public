@@ -7,6 +7,12 @@ Hermes registration. It invokes the cohort-bound installed
 `isonapse-hermes-adapter`; the Rust adapter and proprietary hook binary are not
 part of this toolkit.
 
+The dashboard's Overview and Health rows report only Hermes disk presence and
+adapter digest state, labelled “Runtime not verified here”. They never execute
+Hermes. Use `isonapse hook status` or `isonapse hook doctor --details` in an
+operator terminal for runtime checks; an adapter digest match alone proves no
+runtime activation or governance.
+
 `_adk_json.py` is the unchanged strict JSON decoder from the Python ADK. The
 installer includes and verifies it with the plugin; the native-boundary tests
 load the same canonical package source. Duplicate keys and nonfinite values

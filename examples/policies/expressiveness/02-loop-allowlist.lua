@@ -1,17 +1,16 @@
 -- 02-loop-allowlist.lua — table-build loop generates per-subcommand rules.
 --
 -- This example PERMITs git ONLY when the subcommand is one of
--- {status, log, diff, show}. Everything else falls through
--- to the gate's default layers (the destructive veto knocks
--- `git reset --hard` down to "ask the human"; the learned gate may permit
--- benign subcommands it has seen before).
+-- {status, log, diff, show}. Everything else keeps Isonapse's own checks:
+-- in Enforce, `git reset --hard` asks you first, and work like what you
+-- approved before may pass.
 --
--- This is an ALLOWLIST: unlisted commands keep the gate's remaining checks. Expressing it
+-- This is an ALLOWLIST: unlisted commands keep Isonapse's other checks. Expressing it
 -- as `tool:Bash:git = PERMIT` plus a check_action that denies the bad
 -- subcommands would be a BLOCKLIST, where a git subcommand nobody thought
 -- of is permitted by default. That is the whole lesson.
 --
--- `git status` mints the capability `tool:Bash:git:status`, so each
+-- `git status` produces the capability `tool:Bash:git:status`, so each
 -- generated key names a capability the hook really produces. Commands whose
 -- first operand is NOT a subcommand — `cat`, `rm` — never gain that segment,
 -- because there the second word is your filename, not a verb.
