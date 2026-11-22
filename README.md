@@ -1,8 +1,8 @@
-<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=b3d4ea1666eaa30e034966a632006c1e4b5f4bf4 -->
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=dfc0710105e4292a445a5c6cbfcf6688a44dab95 -->
 # Isonapse — a local policy and safety layer for coding agents
 
 > **Status — Public beta:** free during the beta ·
-> macOS 11 or later on Apple silicon · Linux x86_64 with glibc 2.35 or later ·
+> macOS 11 or later on Apple silicon · Linux x86_64 or arm64 (aarch64) with glibc 2.35 or later ·
 > proprietary binaries under the [beta EULA](LICENSE.md) · Hook ADK under Apache-2.0
 
 **The problem.** A coding agent such as Claude Code or Codex CLI runs shell
@@ -88,7 +88,7 @@ the fix. It watches the hook definition or an activity file of another host
 only after you declare it with
 `isonapse hook host-profile evidence`. For a fail-open host this is an
 early warning, not a guarantee, so make one harmless call and confirm a new
-receipt with `isonapse hook report --host <id>` after setup, after every Codex
+receipt with `isonapse hook report --host <id> --details` after setup, after every Codex
 or Isonapse update and after any change to the hook definitions.
 What each host does when the daemon is unreachable, and when a hook cannot
 run, is on the [supported hosts](https://developer.isonapse.com/product#hosts)
@@ -162,7 +162,7 @@ when policy permits it. Every other ask, such as one for a risky shell command,
 also becomes a DENY. An unreachable daemon makes Hermes refuse the call without
 a receipt. Normal applies operator rules and the deterministic shell safety
 floor without a cold-start ask. After a tool call in a fresh Hermes session,
-`isonapse hook report --host hermes` shows the recorded decisions.
+`isonapse hook report --host hermes --details` shows the recorded decisions.
 
 </details>
 
@@ -181,7 +181,7 @@ The verified script installer is the alternative to Homebrew. It always
 downloads anonymously, even when your shell already has a GitHub token set.
 It installs under `~/.isonapse/bin` and does not edit your shell profile:
 
-    curl -fsSL https://github.com/Isonapse/isonapse-public/releases/latest/download/install.sh | sh
+    curl -fsSL https://get.isonapse.com/install.sh | sh
     export PATH="$HOME/.isonapse/bin:$PATH"
 
 Add that export to your shell profile for future sessions, then run the same
@@ -342,13 +342,13 @@ disable and uninstall are summarized below.
 | --- | --- |
 | The daemon is not running or refuses to start | Run `isonapse hook start`, then `isonapse hook doctor`. Read the failure it reports and `controlplane.log` in the data directory (normally `~/.isonapse`). A missing required model is repaired with `isonapse hook intel download`, which also fetches the optional models. |
 | The installed, running or plugin versions disagree | Upgrade with the package manager you installed with, run `isonapse hook restart` and check `isonapse hook status`. With an authorized personal Claude Code plugin, also rerun `isonapse hook init`, then start a fresh Claude Code session and check `/hooks`. |
-| A skill or custom command is blocked before it runs | Run `isonapse hook skill check` and `isonapse hook skill diff`, and review the change against a trusted source. `isonapse hook skill trust` then accepts the current files; `isonapse hook skill untrust` revokes one until you trust it again. |
+| A skill or custom command is blocked before it runs | Run `isonapse hook skill check --details` and `isonapse hook skill diff`, and review the change against a trusted source. `isonapse hook skill trust` then accepts the current files; `isonapse hook skill untrust` revokes one until you trust it again. |
 | `[session-structural-capacity]` blocks in a long multi-agent session | The session reached its fixed limit of 512 distinct agent and capability pairs or 64 agents. Every program or subcommand an agent runs in Bash is its own capability. No policy, approval or mode change clears the limit. After in-flight work and approvals settle, run `isonapse hook reset-structural --host <HOST> -- <SESSION_ID>` in your own terminal, or start a new session. A managed or unknown deployment refuses the reset. `isonapse hook status --details` prints a `Structural session capacity` line. |
-| Optional model assistance is unavailable | `isonapse hook intel status` shows whether the files are present, verified and in use. `isonapse hook intel download` provisions or repairs them; restart after a repair. Without them, narrower local checks still run. |
+| Optional model assistance is unavailable | `isonapse hook intel status --details` shows file presence, pin verification and loader-session presence; a loaded session does not prove a particular scan ran. `isonapse hook intel download` provisions or repairs them; restart after a repair. Without them, narrower local checks still run. |
 | Codex refuses every tool call after an Isonapse upgrade | Run `isonapse hook restart`, then `isonapse hook adk-pin` to re-pin the upgraded Hook. |
-| Codex runs tools but no new receipt appears | Codex runs tools unchecked while it does not trust its hook definitions. Trust them again in Codex's `/hooks`, make one harmless call and confirm a new receipt with `isonapse hook report --host <id>`. |
+| Codex runs tools but no new receipt appears | Codex runs tools unchecked while it does not trust its hook definitions. Trust them again in Codex's `/hooks`, make one harmless call and confirm a new receipt with `isonapse hook report --host <id> --details`. |
 | `isonapse: command not found` after a script install | Add `~/.isonapse/bin` to your `PATH`, as in the install steps above. |
-| The installer stops with `unsupported platform`, a glibc error or `detected musl libc` | Builds exist only for macOS 11 or later on Apple silicon and Linux x86_64 with glibc 2.35 or later. Intel macOS and musl distributions such as Alpine are not supported. |
+| The installer stops with `unsupported platform`, a glibc error or `detected musl libc` | Builds exist only for macOS 11 or later on Apple silicon and Linux x86_64 or arm64 (aarch64) with glibc 2.35 or later. Intel macOS, 32-bit ARM and musl distributions such as Alpine are not supported. |
 | `sha256 mismatch` or `refusing to install an incomplete or inconsistent release archive` | The download was corrupt or incomplete, and the installer changed nothing. Run it again. |
 
 <details>
@@ -386,7 +386,7 @@ process before retrying or resolve the retained state manually.
 
 ## Releases
 
-Every build is `0.3.0-beta+release.<short_sha>`. The CLI, the generated
+Every build is `0.4.0-beta+release.<short_sha>`. The CLI, the generated
 Claude Code plugin, the GitHub release title and the Homebrew formula all
 name that same build; Homebrew adds a numeric package revision to its own
 version. Paste the whole `isonapse --version` output when you report a bug.
