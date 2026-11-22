@@ -3,7 +3,7 @@
   "manifest_version": 1,
   "source_repository": "Isonapse/isonapse",
   "source_ref": "refs/heads/main",
-  "source_sha": "dfc0710105e4292a445a5c6cbfcf6688a44dab95",
+  "source_sha": "6bd82852c50f395e060750b5c48c283328cdfb05",
   "files": [
     {
       "path": "LICENSE.md",
