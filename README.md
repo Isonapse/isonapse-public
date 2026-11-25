@@ -1,4 +1,4 @@
-<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=6bd82852c50f395e060750b5c48c283328cdfb05 -->
+<!-- isonapse-public-readme-source repo=Isonapse/isonapse ref=refs/heads/main sha=27664e738615474dff5622e727a447fbb2234b27 -->
 # Isonapse — a local policy and safety layer for coding agents
 
 > **Status — Public beta:** free during the beta ·
@@ -62,15 +62,15 @@ covers each step and the limits to read first.
 
 ## Supported hosts
 
-The Hook works with Claude Code, Hermes Agent v0.20.0, and pi 1.0.3, 1.0.4 and 1.5.0.
+The Hook works with Claude Code, Hermes Agent v0.20.0, and pi 1.0.3, 1.0.4, 1.5.0 and 1.6.0.
 OpenAI Codex CLI and your own agent connect through the Hook ADK; with
 Docker, `isonapse setup` or the dashboard adds Codex for you.
 
 | Host | Version | Connects through | Block | Ask you | Rewrite input | Replace output |
 | --- | --- | --- | --- | --- | --- | --- |
 | Claude Code | No pinned version; Isonapse does not check it | Built in, thirteen hook events | Yes | Yes | Yes | Yes, within documented limits |
-| Hermes Agent | Exactly v0.20.0 (2026.8.3); setup refuses other builds | Built in, plugin | Yes | No: a question becomes a refusal, recorded when witness storage is available | No: a call that needs a rewrite is refused | No |
-| pi | Exactly pi 1.0.3, 1.0.4 and 1.5.0; Node.js 22.19.0 or newer | Built in, pinned extension | Yes | Yes, through pi's own prompt | Yes | Yes |
+| Hermes Agent | Exactly Hermes Agent v0.20.0 (2026.8.3); setup and the plugin refuse other releases | Built in, plugin | Yes | No: a question becomes a refusal, recorded when witness storage is available | No: a call that needs a rewrite is refused | No |
+| pi | Exactly pi 1.0.3, 1.0.4, 1.5.0 and 1.6.0; Node.js 22.19.0 or newer | Built in, pinned extension | Yes | Yes, through pi's own prompt | Yes | Yes |
 | OpenAI Codex CLI | codex-cli 0.159.0 or newer; contract-tested on codex-cli 0.164.0 on macOS arm64 and Linux x86_64; the adapter does not check the version | Hook ADK reference adapter, added by `isonapse setup` or the dashboard, or one you review and register | Yes | No: a question becomes a refusal, recorded when witness storage is available | Yes, in Normal and Enforce: shell commands, single-file patches, MCP tool arguments | No; a result can be withheld |
 | Your own agent | Your adapter, built with the Hook ADK (Python or TypeScript) | A host profile you register | Yes, if the host honors a refusal | As declared in your reviewed host profile | As declared | As declared |
 
@@ -116,11 +116,11 @@ requires of each host are below and in the
 <summary><strong>Hermes Agent and pi</strong>: exact versions and required settings</summary>
 
 pi support requires one of the exactly qualified pi releases, currently pi
-1.0.3, 1.0.4 and 1.5.0. The list is exact, not a minimum or a range: this release
+1.0.3, 1.0.4, 1.5.0 and 1.6.0. The list is exact, not a minimum or a range: this release
 refuses every other pi version by design until it is qualified, including pi
 0.80.2. Install the newest with
-`npm install -g --ignore-scripts @earendil-works/pi-coding-agent@1.5.0` and
-confirm `pi --version` prints 1.0.3, 1.0.4 or 1.5.0 before
+`npm install -g --ignore-scripts @earendil-works/pi-coding-agent@1.6.0` and
+confirm `pi --version` prints 1.0.3, 1.0.4, 1.5.0 or 1.6.0 before
 `isonapse hook init --host pi`. `pi update` and the pi.dev installer always
 install the newest pi release, which this release may refuse until it is
 qualified. On a pi it has not qualified, or whose version it cannot verify
@@ -135,7 +135,13 @@ keeps `/trust` decisions per agent directory (`PI_CODING_AGENT_DIR`, default
 Hermes support requires exactly Hermes Agent v0.20.0 (2026.8.3), audited
 upstream commit `3c27eb623`; it is an exact requirement, not a minimum.
 `isonapse hook init --host hermes` runs the `hermes` on your `PATH` and
-refuses every other build before writing anything. Init installs and enables
+refuses every other build before writing anything. If Hermes is later replaced
+by another release, the installed plugin refuses every tool call
+(`hermes_version_unsupported`), locally and without a receipt, until the
+supported release runs again; its message gives the exact commands that
+download Hermes's installer at the supported release and run it pinned to that
+release, and `isonapse hook remove --host hermes`. Run `isonapse hook status`
+after any Hermes update. Init installs and enables
 the Isonapse plugin, but it only checks the other Hermes settings governance
 depends on and refuses when one is wrong. Leave `HERMES_SAFE_MODE` and
 `HERMES_ENABLE_PROJECT_PLUGINS` unset (or not `1`, `true`, `yes` or `on`) in
