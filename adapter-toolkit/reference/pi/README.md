@@ -40,7 +40,7 @@ replaces, each exactly once, when it installs the extension:
   the path of the installed, cohort-bound `isonapse-pi-adapter`.
 - `"__ISONAPSE_PI_QUALIFIED_VERSIONS_MUST_BE_RENDERED__"`, the value of
   `RENDERED_QUALIFIED_PI_VERSIONS`, becomes the JSON list of the pi releases the
-  installing Isonapse release qualified (currently pi 1.0.3, 1.0.4 and 1.5.0).
+  installing Isonapse release qualified (currently pi 1.0.3, 1.0.4, 1.5.0 and 1.6.0).
 
 The extension reads the running pi's own `VERSION` when it loads. Unless that
 version is exactly one of the rendered releases, every tool call is refused
@@ -58,15 +58,15 @@ calls to it.
 ## Supported pi version
 
 The shipped integration supports only the exactly qualified pi releases,
-currently pi 1.0.3, 1.0.4 and 1.5.0. The list is exact, not a minimum or a range: the
+currently pi 1.0.3, 1.0.4, 1.5.0 and 1.6.0. The list is exact, not a minimum or a range: the
 installer refuses every other pi version by design until it is qualified,
 including pi 0.80.2 and every other 0.x release, and stops before writing
 anything. Install the newest qualified release with npm, which pins the exact
 version, and confirm it before running init:
 
 ```sh
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent@1.5.0
-pi --version   # must print 1.0.3, 1.0.4 or 1.5.0
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent@1.6.0
+pi --version   # must print 1.0.3, 1.0.4, 1.5.0 or 1.6.0
 ```
 
 `pi update` and the pi.dev installer always install the newest pi release,

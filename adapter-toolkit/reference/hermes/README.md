@@ -26,6 +26,24 @@ Use this as a compact example of bounded subprocess handling, identity
 capture, exact instruction validation, and fail-closed exception handling.
 Installation is performed by `isonapse hook init --host hermes`.
 
+## Rendered value
+
+This source carries one placeholder that `isonapse hook init --host hermes`
+replaces, exactly once, when it installs the plugin:
+`"__ISONAPSE_HERMES_QUALIFIED_RELEASES_MUST_BE_RENDERED__"`, the value of
+`_RENDERED_QUALIFIED_HERMES`, becomes the qualified Hermes Agent releases of the
+installing Isonapse release, as a JSON object (currently Hermes Agent v0.20.0
+(2026.8.3)).
+
+The plugin reads the running Hermes's `hermes_cli.__version__` and
+`__release_date__`. Unless they name exactly one of the rendered releases, every
+tool call is refused before the adapter is asked, in every gate mode, with
+`hermes_version_unsupported` (or `hermes_version_unverified` when they cannot be
+read). An unrendered copy, such as this reference file, carries no qualified
+releases, so it refuses every tool call (`hermes_qualified_set_missing`). This
+refusal is made locally by the plugin inside Hermes: it is not a gate decision,
+and the refused call has no receipt.
+
 Self-protection covers profile selection (`active_profile` and `profiles/`) as
 well as the plugin/configuration roots. Creating or switching profiles requires
 an operator terminal outside the governed session. Install Isonapse in the selected

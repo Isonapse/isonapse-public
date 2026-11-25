@@ -23,6 +23,15 @@ ADAPTER_TIMEOUT_SECONDS = 55.0
 
 logger = logging.getLogger("isonapse.hermes")
 
+# The qualified Hermes Agent releases (#1056). `isonapse hook init --host
+# hermes` replaces this string with the text of
+# crates/isonapse-cli/hermes-qualified-versions.json, a JSON object that is also
+# a Python expression. Unrendered, it stays a string, and every tool call is
+# refused: this copy was not installed by `hook init`.
+_RENDERED_QUALIFIED_HERMES: Any = "__ISONAPSE_HERMES_QUALIFIED_RELEASES_MUST_BE_RENDERED__"
+LOCAL_REFUSAL = "refused locally before any gate decision, so no receipt exists for this call"
+REMOVE_COMMAND = "isonapse hook remove --host hermes"
+
 # The pinned host injects pre_llm_call context once at the next turn's setup.
 # This is observed decision context, not a claim that a later generation is
 # still unloaded. Bound sessions and bytes, never persist it across processes.
@@ -57,6 +66,88 @@ def pre_llm_call(session_id: str = "", **_: Any) -> dict[str, str] | None:
     except Exception:
         _context_delivery_error()
         return None
+
+
+def _qualified_hermes() -> tuple[list[tuple[str, str]], str, tuple[str, str]] | None:
+    """The rendered set's (version, build) pairs, its supported-release
+    phrase and the two downgrade commands, or None when the set was not
+    rendered or is malformed. The downgrade downloads Hermes's own installer
+    from the newest release's commit-pinned URL, then runs it pinned to that
+    commit (Hermes v0.20.0 cannot be installed with uv or pipx); no step pipes
+    a download into a shell, which Isonapse itself refuses."""
+    data = _RENDERED_QUALIFIED_HERMES
+    if not isinstance(data, dict):
+        return None
+    entries = data.get("qualified")
+    repository = data.get("repository")
+    if not isinstance(entries, list) or not entries or not isinstance(repository, str) or not repository:
+        return None
+    pairs: list[tuple[str, str]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            return None
+        version, build, commit = entry.get("version"), entry.get("build"), entry.get("commit")
+        if not all(isinstance(value, str) and value for value in (version, build, commit)):
+            return None
+        pairs.append((version, build))
+    listed = [f"v{version} ({build})" for version, build in pairs]
+    joined = listed[0] if len(listed) == 1 else f"{', '.join(listed[:-1])} and {listed[-1]}"
+    supported = f"Hermes Agent {joined}"
+    commit = entries[-1]["commit"]
+    return pairs, supported, (
+        f"curl -fsSL -o hermes-install.sh https://raw.githubusercontent.com/{repository}/{commit}/scripts/install.sh",
+        f"bash hermes-install.sh --commit {commit} --force-commit --skip-setup",
+    )
+
+
+def _running_hermes_version() -> tuple[str, str] | None:
+    """The running Hermes's own version and release date, read from its loaded
+    `hermes_cli` package (`__version__`, `__release_date__`). Nothing is
+    imported here: outside a loaded Hermes there is no version to read."""
+    module = sys.modules.get("hermes_cli")
+    if module is None:
+        return None
+    try:
+        version = getattr(module, "__version__", None)
+        build = getattr(module, "__release_date__", None)
+    except BaseException:
+        return None
+    if not isinstance(version, str) or not isinstance(build, str) or not version or not build:
+        return None
+    return version, build
+
+
+def _hermes_version_refusal() -> str | None:
+    """Why every tool call must be refused on the running Hermes, or None when
+    it is one of the qualified releases. Exact equality of version and release
+    date: no prefix, range or ordering."""
+    qualified = _qualified_hermes()
+    if qualified is None:
+        return (
+            f"isonapse: hermes_qualified_set_missing: {LOCAL_REFUSAL}. This copy of the Isonapse "
+            "Hermes plugin carries no qualified Hermes release set, so it was not installed by "
+            "`isonapse hook init --host hermes`; install it with that command, or remove it with "
+            f"`{REMOVE_COMMAND}`."
+        )
+    pairs, supported, (download, install) = qualified
+    running = _running_hermes_version()
+    if running is not None and running in pairs:
+        return None
+    fixes = (
+        f"Downgrade to the supported release with Hermes's installer, pinned to it: `{download}`, "
+        f"then `{install}`, then restart Hermes; or stop using Isonapse with Hermes: `{REMOVE_COMMAND}`."
+    )
+    if running is None:
+        return (
+            f"isonapse: hermes_version_unverified: {LOCAL_REFUSAL}. The running Hermes did not "
+            f"report its version, so Isonapse cannot verify a supported release; Isonapse supports "
+            f"{supported}. {fixes}"
+        )
+    version, build = running
+    return (
+        f"isonapse: hermes_version_unsupported: {LOCAL_REFUSAL}. This Hermes reports "
+        f"v{version} ({build}); Isonapse supports {supported}. {fixes}"
+    )
 
 
 def _working_directory() -> str | None:
@@ -307,6 +398,11 @@ def _pre_tool_call(
 
 def pre_tool_call(**kwargs: Any) -> dict[str, str] | None:
     try:
+        # #1056: a Hermes outside the qualified set is refused by name before
+        # any governance call. The refusal is local: no gate decision, no receipt.
+        refusal = _hermes_version_refusal()
+        if refusal is not None:
+            return {"action": "block", "message": refusal}
         decision = _pre_tool_call(**kwargs)
         if decision is not None:
             return decision
@@ -479,4 +575,29 @@ def _register_priority_hooks(ctx: Any) -> None:
 
 
 def register(ctx: Any) -> None:
-    _register_priority_hooks(ctx)
+    """Register the audited callbacks first.
+
+    A raise here makes Hermes skip this plugin and keep running without it
+    (v0.20.0 `PluginManager._load_plugin` logs "Failed to load plugin" and
+    continues), so tool calls would run ungoverned. On a qualified Hermes a
+    changed registry still refuses the load: precedence cannot be proven. On
+    any other Hermes the version refusal must still reach every tool call, so
+    a registry that refuses the priority binding falls back to Hermes's public
+    `register_hook` for `pre_tool_call` alone, which blocks every call.
+    """
+    try:
+        _register_priority_hooks(ctx)
+    except BaseException:
+        if _hermes_version_refusal() is None:
+            raise
+        register_hook = getattr(ctx, "register_hook", None)
+        if not callable(register_hook):
+            raise
+        register_hook("pre_tool_call", pre_tool_call)
+        try:
+            logger.error(
+                "isonapse: this Hermes is not a qualified release and its plugin registry changed; "
+                "every tool call is refused"
+            )
+        except BaseException:
+            pass
